@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GPU Particle Morphing - Next Level</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        width: 100%;
+        height: 100vh;
+        overflow: hidden;
+        background: #000;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+      }
+
+      #container {
+        width: 100%;
+        height: 100%;
+        position: relative;
+      }
+
+      #ui {
+        position: absolute;
+        top: 30px;
+        right: 30px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        color: white;
+        z-index: 1000;
+        gap: 15px;
+      }
+
+      #controls {
+        position: absolute;
+        top: 30px;
+        left: 30px;
+        color: white;
+        z-index: 1000;
+      }
+
+      .control-group {
+        background: rgba(10, 10, 10, 0.8);
+        backdrop-filter: blur(20px);
+        padding: 20px;
+        border-radius: 20px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      }
+
+      .slider-container {
+        margin: 15px 0;
+      }
+
+      .slider-container label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      .slider-container span {
+        color: #ff5900;
+        font-weight: 600;
+      }
+
+      input[type="range"] {
+        width: 220px;
+        height: 6px;
+        border-radius: 3px;
+        background: rgba(255, 255, 255, 0.1);
+        outline: none;
+        -webkit-appearance: none;
+        appearance: none;
+        cursor: pointer;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #ff5900;
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(255, 89, 0, 0.5);
+        transition: all 0.2s ease;
+      }
+
+      input[type="range"]::-webkit-slider-thumb:hover {
+        transform: scale(1.2);
+        box-shadow: 0 0 20px rgba(255, 89, 0, 0.8);
+      }
+
+      input[type="color"] {
+        width: 60px;
+        height: 35px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        background: transparent;
+      }
+
+      #title {
+        font-size: 36px;
+        font-weight: 800;
+        margin-bottom: 10px;
+        text-shadow: 0 0 20px rgba(255, 89, 0, 0.5);
+        background: linear-gradient(135deg, #ff5900, #ff9a00);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: 2px;
+      }
+
+      .button {
+        cursor: pointer;
+        padding: 15px 25px;
+        border: 2px solid transparent;
+        border-radius: 15px;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.05),
+          rgba(255, 255, 255, 0)
+        );
+        backdrop-filter: blur(10px);
+        color: #fff;
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        min-width: 160px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .button::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.2),
+          transparent
+        );
+        transition: left 0.5s;
+      }
+
+      .button:hover {
+        background: linear-gradient(
+          135deg,
+          rgba(255, 89, 0, 0.2),
+          rgba(255, 89, 0, 0.1)
+        );
+        border-color: rgba(255, 89, 0, 0.5);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(255, 89, 0, 0.3);
+      }
+
+      .button:hover::before {
+        left: 100%;
+      }
+
+      .button.active {
+        background: linear-gradient(
+          135deg,
+          rgba(255, 89, 0, 0.8),
+          rgba(255, 89, 0, 0.6)
+        );
+        border-color: #ff5900;
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 15px 40px rgba(255, 89, 0, 0.4);
+      }
+
+      #info {
+        position: absolute;
+        bottom: 30px;
+        left: 30px;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 13px;
+        text-shadow: 0 2px 5px rgba(0, 0, 0, 0.8);
+        pointer-events: none;
+        letter-spacing: 0.5px;
+      }
+
+      .loading {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 24px;
+        color: #ff5900;
+        z-index: 2000;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container"></div>
+    <div id="ui">
+      <div id="title">PARTICLE MORPH</div>
+      <div class="button" data-shape="sphere">SPHERE</div>
+      <div class="button" data-shape="bird">BIRD</div>
+      <div class="button" data-shape="face">HUMAN</div>
+      <div class="button" data-shape="tree">TREE</div>
+      <div class="button" data-shape="angkorwat">ANGKOR WAT</div>
+    </div>
+
+    <div id="controls">
+      <div class="control-group">
+        <div class="slider-container">
+          <label>Particle Size: <span id="sizeValue">3.0</span></label>
+          <input
+            type="range"
+            id="particleSize"
+            min="0.5"
+            max="10"
+            step="0.1"
+            value="3.0"
+          />
+        </div>
+        <div class="slider-container">
+          <label>Rotation Speed: <span id="speedValue">0.5</span></label>
+          <input
+            type="range"
+            id="rotationSpeed"
+            min="-2"
+            max="2"
+            step="0.1"
+            value="0.5"
+          />
+        </div>
+        <div class="slider-container">
+          <label>Particle Color:</label>
+          <input type="color" id="particleColor" value="#ff5900" />
+        </div>
+      </div>
+      <div class="control-group">
+        <div class="slider-container">
+          <label>Bloom Intensity: <span id="bloomValue">1.5</span></label>
+          <input
+            type="range"
+            id="bloomStrength"
+            min="0"
+            max="3"
+            step="0.1"
+            value="1.5"
+          />
+        </div>
+        <div class="slider-container">
+          <label>Motion Trail: <span id="trailValue">0.85</span></label>
+          <input
+            type="range"
+            id="motionTrail"
+            min="0"
+            max="0.98"
+            step="0.01"
+            value="0.85"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div id="info">
+      Click & drag to rotate | Scroll to zoom | Double-click to reset
+    </div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.162.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.162.0/examples/jsm/"
+        }
+      }
+    </script>
+
+    <script type="module">
+      import * as THREE from "three";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+      import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+      import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+      import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
+      import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+      import { GammaCorrectionShader } from "three/addons/shaders/GammaCorrectionShader.js";
+
+      // Global variables
+      let scene, camera, renderer, controls;
+      let particleSystem, particleMaterial;
+      let composer, bloomPass;
+      let clock = new THREE.Clock();
+      let selectedButton = null;
+      let previousRenderTarget, motionBlurComposer;
+
+      // Particle system parameters
+      const PARTICLE_COUNT = 20000;
+      let targetPositions = new Float32Array(PARTICLE_COUNT * 3);
+      let originalPositions = new Float32Array(PARTICLE_COUNT * 3);
+      let morphProgress = 1.0;
+      let isMorphing = false;
+
+      // Parameters
+      const params = {
+        particleSize: 3.0,
+        particleColor: new THREE.Color("#ff5900"),
+        rotationSpeed: 0.5,
+        bloomStrength: 1.5,
+        motionTrail: 0.85,
+      };
+
+      init();
+      animate();
+
+      function init() {
+        initScene();
+        initLights();
+        initControls();
+        createParticleSystem();
+        initPostProcessing();
+        initEventListeners();
+
+        // Set initial shape
+        const initialButton = document.querySelector('[data-shape="sphere"]');
+        initialButton.classList.add("active");
+        selectedButton = initialButton;
+        morphToShape("sphere");
+      }
+
+      function initScene() {
+        // Scene setup
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000000);
+        scene.fog = new THREE.FogExp2(0x000000, 0.01);
+
+        // Camera setup
+        camera = new THREE.PerspectiveCamera(
+          75,
+          window.innerWidth / window.innerHeight,
+          0.1,
+          1000
+        );
+        camera.position.set(40, 30, 60);
+        camera.lookAt(0, 0, 0);
+
+        // Renderer setup
+        renderer = new THREE.WebGLRenderer({
+          antialias: true,
+          powerPreference: "high-performance",
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        document.getElementById("container").appendChild(renderer.domElement);
+
+        // Motion blur render target
+        previousRenderTarget = new THREE.WebGLRenderTarget(
+          window.innerWidth,
+          window.innerHeight,
+          {
+            minFilter: THREE.LinearFilter,
+            magFilter: THREE.LinearFilter,
+            format: THREE.RGBAFormat,
+          }
+        );
+      }
+
+      function initLights() {
+        const ambientLight = new THREE.AmbientLight(0x404040, 2);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        directionalLight.position.set(20, 30, 20);
+        scene.add(directionalLight);
+
+        const pointLight = new THREE.PointLight(0xff5900, 0.5, 100);
+        pointLight.position.set(0, 0, 0);
+        scene.add(pointLight);
+      }
+
+      function initControls() {
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 20;
+        controls.maxDistance = 150;
+        controls.autoRotate = false;
+        controls.target.set(0, 0, 0);
+      }
+
+      function createParticleSystem() {
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(PARTICLE_COUNT * 3);
+        const colors = new Float32Array(PARTICLE_COUNT * 3);
+        const sizes = new Float32Array(PARTICLE_COUNT);
+        const randoms = new Float32Array(PARTICLE_COUNT * 4);
+
+        // Initialize with sphere positions
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+          const i3 = i * 3;
+
+          // Random values for shader animation
+          randoms[i * 4] = Math.random();
+          randoms[i * 4 + 1] = Math.random();
+          randoms[i * 4 + 2] = Math.random();
+          randoms[i * 4 + 3] = Math.random();
+
+          // Initial color
+          const hue = 0.05 + Math.random() * 0.1;
+          const saturation = 0.8 + Math.random() * 0.2;
+          const lightness = 0.5 + Math.random() * 0.3;
+          const color = new THREE.Color().setHSL(hue, saturation, lightness);
+          colors[i3] = color.r;
+          colors[i3 + 1] = color.g;
+          colors[i3 + 2] = color.b;
+
+          // Random sizes for variation
+          sizes[i] = 0.8 + Math.random() * 0.4;
+        }
+
+        geometry.setAttribute(
+          "position",
+          new THREE.BufferAttribute(positions, 3)
+        );
+        geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+        geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
+        geometry.setAttribute("randoms", new THREE.BufferAttribute(randoms, 4));
+
+        // Shader material for GPU animation
+        particleMaterial = new THREE.ShaderMaterial({
+          uniforms: {
+            uTime: { value: 0 },
+            uSize: { value: params.particleSize },
+            uColor: { value: params.particleColor },
+            uMorphProgress: { value: 1.0 },
+            uTargetPositions: { value: targetPositions },
+          },
+          vertexShader: `
+                    uniform float uTime;
+                    uniform float uSize;
+                    uniform float uMorphProgress;
+                    
+                    attribute float size;
+                    attribute vec4 randoms;
+                    attribute vec3 color;
+                    
+                    varying vec3 vColor;
+                    varying float vAlpha;
+                    
+                    void main() {
+                        // Base position with subtle animation
+                        vec3 pos = position;
+                        
+                        // Add subtle floating animation
+                        pos += vec3(
+                            sin(uTime * randoms.x + randoms.w * 6.28) * 0.1,
+                            cos(uTime * randoms.y + randoms.w * 6.28) * 0.1,
+                            sin(uTime * randoms.z + randoms.w * 6.28) * 0.1
+                        ) * (1.0 - uMorphProgress * 0.5);
+                        
+                        vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                        gl_Position = projectionMatrix * mvPosition;
+                        
+                        // Size attenuation
+                        float sizeAttenuation = 300.0 / -mvPosition.z;
+                        gl_PointSize = uSize * size * sizeAttenuation;
+                        
+                        // Color variation
+                        vColor = color;
+                        vAlpha = 0.8 + sin(uTime * randoms.x) * 0.2;
+                    }
+                `,
+          fragmentShader: `
+                    uniform vec3 uColor;
+                    
+                    varying vec3 vColor;
+                    varying float vAlpha;
+                    
+                    void main() {
+                        // Circular particle shape with soft edges
+                        vec2 center = vec2(0.5);
+                        float dist = distance(gl_PointCoord, center);
+                        
+                        if (dist > 0.5) discard;
+                        
+                        // Soft edge falloff
+                        float strength = 1.0 - smoothstep(0.0, 0.5, dist);
+                        strength = pow(strength, 2.0);
+                        
+                        // Final color with glow effect
+                        vec3 finalColor = mix(uColor, vColor, 0.5);
+                        finalColor = pow(finalColor * 1.2, vec3(0.8)); // Brighten and adjust gamma
+                        
+                        gl_FragColor = vec4(finalColor, strength * vAlpha);
+                    }
+                `,
+          transparent: true,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+        });
+
+        particleSystem = new THREE.Points(geometry, particleMaterial);
+        scene.add(particleSystem);
+      }
+
+      function initPostProcessing() {
+        // Main composer
+        composer = new EffectComposer(renderer);
+
+        const renderPass = new RenderPass(scene, camera);
+        composer.addPass(renderPass);
+
+        // Bloom pass for glow effect
+        bloomPass = new UnrealBloomPass(
+          new THREE.Vector2(window.innerWidth, window.innerHeight),
+          params.bloomStrength,
+          0.4,
+          0.85
+        );
+        composer.addPass(bloomPass);
+
+        // Gamma correction
+        const gammaCorrectionPass = new ShaderPass(GammaCorrectionShader);
+        composer.addPass(gammaCorrectionPass);
+
+        // Motion blur pass
+        const motionBlurShader = {
+          uniforms: {
+            tDiffuse: { value: null },
+            tPrevious: { value: previousRenderTarget.texture },
+            uBlendFactor: { value: params.motionTrail },
+          },
+          vertexShader: `
+                    varying vec2 vUv;
+                    void main() {
+                        vUv = uv;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+          fragmentShader: `
+                    uniform sampler2D tDiffuse;
+                    uniform sampler2D tPrevious;
+                    uniform float uBlendFactor;
+                    varying vec2 vUv;
+                    
+                    void main() {
+                        vec4 current = texture2D(tDiffuse, vUv);
+                        vec4 previous = texture2D(tPrevious, vUv);
+                        
+                        gl_FragColor = mix(current, previous, uBlendFactor);
+                    }
+                `,
+        };
+
+        const motionBlurPass = new ShaderPass(motionBlurShader);
+        composer.addPass(motionBlurPass);
+      }
+
+      function morphToShape(shape) {
+        const positions = particleSystem.geometry.attributes.position.array;
+
+        // Store current positions
+        for (let i = 0; i < positions.length; i++) {
+          originalPositions[i] = positions[i];
+        }
+
+        // Generate target positions based on shape
+        switch (shape) {
+          case "sphere":
+            generateSphere();
+            break;
+          case "bird":
+            generateBird();
+            break;
+          case "face":
+            generateFace();
+            break;
+          case "tree":
+            generateTree();
+            break;
+          case "angkorwat":
+            generateAngkorWat();
+            break;
+        }
+
+        morphProgress = 0;
+        isMorphing = true;
+      }
+
+      function generateSphere() {
+        const radius = 20;
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+          const i3 = i * 3;
+
+          // Fibonacci sphere for even distribution
+          const y = 1 - (i / (PARTICLE_COUNT - 1)) * 2;
+          const radiusAtY = Math.sqrt(1 - y * y);
+          const theta = ((i + 1) % PARTICLE_COUNT) * 2.399963229728653;
+
+          targetPositions[i3] = radiusAtY * Math.cos(theta) * radius;
+          targetPositions[i3 + 1] = y * radius;
+          targetPositions[i3 + 2] = radiusAtY * Math.sin(theta) * radius;
+        }
+      }
+
+      function generateBird() {
+        const points = [];
+        const scale = 0.8;
+
+        // Wing structure
+        for (let u = 0; u <= 1; u += 0.02) {
+          for (let v = 0; v <= 1; v += 0.1) {
+            // Left wing
+            const wingSpan = 30 * (1 - u * u);
+            const x1 = -wingSpan * v * scale;
+            const y1 = Math.sin(v * Math.PI) * 5 * scale;
+            const z1 = u * 20 * scale - 10 * scale;
+            points.push(new THREE.Vector3(x1, y1, z1));
+
+            // Right wing
+            const x2 = wingSpan * v * scale;
+            points.push(new THREE.Vector3(x2, y1, z1));
+          }
+        }
+
+        // Body
+        for (let t = 0; t <= 1; t += 0.02) {
+          const bodyRadius = 3 * (1 - t * t * 0.5);
+          for (let theta = 0; theta < Math.PI * 2; theta += 0.2) {
+            const x = Math.cos(theta) * bodyRadius * scale;
+            const y = Math.sin(theta) * bodyRadius * scale;
+            const z = (t - 0.5) * 25 * scale;
+            points.push(new THREE.Vector3(x, y, z));
+          }
+        }
+
+        // Head
+        for (let i = 0; i < 200; i++) {
+          const theta = Math.random() * Math.PI * 2;
+          const phi = Math.acos(Math.random() * 2 - 1);
+          const r = 4 * scale;
+          const x = r * Math.sin(phi) * Math.cos(theta);
+          const y = r * Math.sin(phi) * Math.sin(theta) + 3 * scale;
+          const z = r * Math.cos(phi) + 12 * scale;
+          points.push(new THREE.Vector3(x, y, z));
+        }
+
+        // Tail feathers
+        for (let i = 0; i < 5; i++) {
+          const angle = (i / 5) * Math.PI - Math.PI / 2;
+          for (let t = 0; t < 1; t += 0.05) {
+            const x = Math.cos(angle) * t * 15 * scale;
+            const y = Math.sin(angle) * t * 8 * scale;
+            const z = -10 * scale - t * 8 * scale;
+            points.push(new THREE.Vector3(x, y, z));
+          }
+        }
+
+        distributePointsToParticles(points);
+      }
+
+      function generateFace() {
+        const points = [];
+        const scale = 1.2;
+
+        // Head outline - ellipsoid
+        for (let theta = 0; theta <= Math.PI; theta += 0.05) {
+          for (let phi = 0; phi <= Math.PI * 2; phi += 0.1) {
+            const r = 15;
+            const x = r * Math.sin(theta) * Math.cos(phi) * scale;
+            const y = r * Math.cos(theta) * 1.2 * scale + 5;
+            const z = r * Math.sin(theta) * Math.sin(phi) * 0.8 * scale;
+
+            // Add some noise to make it more organic
+            const noise = (Math.random() - 0.5) * 1;
+            points.push(new THREE.Vector3(x + noise, y + noise, z + noise));
+          }
+        }
+
+        // Eyes
+        const eyePositions = [
+          [-6, 8, 6],
+          [6, 8, 6],
+        ];
+        for (let eye of eyePositions) {
+          for (let i = 0; i < 150; i++) {
+            const angle = (i / 150) * Math.PI * 2;
+            const r = Math.random() * 2.5;
+            const x = eye[0] + Math.cos(angle) * r * scale;
+            const y = eye[1] + Math.sin(angle) * r * scale;
+            const z = eye[2] + Math.random() * scale;
+            points.push(new THREE.Vector3(x, y, z));
+          }
+        }
+
+        // Nose
+        for (let t = 0; t <= 1; t += 0.05) {
+          for (let i = 0; i < 50; i++) {
+            const x = (Math.random() - 0.5) * 3 * (1 - t) * scale;
+            const y = 5 - t * 7 * scale;
+            const z = 8 + Math.random() * 2 * scale;
+            points.push(new THREE.Vector3(x, y, z));
+          }
+        }
+
+        // Mouth
+        for (let t = 0; t <= 1; t += 0.02) {
+          const angle = t * Math.PI;
+          const r = 7;
+          const x = Math.cos(angle) * r * scale;
+          const y = -5 - Math.sin(angle) * 2 * scale;
+          const z = 6 + Math.random() * scale;
+          points.push(new THREE.Vector3(x, y, z));
+
+          // Add thickness
+          for (let i = 0; i < 10; i++) {
+            points.push(
+              new THREE.Vector3(
+                x + (Math.random() - 0.5) * 2,
+                y + (Math.random() - 0.5) * 2,
+                z + Math.random()
+              )
+            );
+          }
+        }
+
+        // Cheeks - add volume
+        const cheekPositions = [
+          [-10, 0, 5],
+          [10, 0, 5],
+        ];
+        for (let cheek of cheekPositions) {
+          for (let i = 0; i < 200; i++) {
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(Math.random() * 2 - 1);
+            const r = 5 * Math.random();
+            const x = cheek[0] + r * Math.sin(phi) * Math.cos(theta) * scale;
+            const y = cheek[1] + r * Math.sin(phi) * Math.sin(theta) * scale;
+            const z = cheek[2] + r * Math.cos(phi) * scale;
+            points.push(new THREE.Vector3(x, y, z));
+          }
+        }
+
+        distributePointsToParticles(points);
+      }
+
+      function generateTree() {
+        const points = [];
+        const scale = 0.7;
+
+        // Trunk
+        const trunkHeight = 15;
+        const trunkRadius = 3;
+        for (let y = -15; y < -15 + trunkHeight; y += 0.5) {
+          const radiusAtHeight =
+            trunkRadius * (1 + ((y + 15) / trunkHeight) * 0.2);
+          for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
+            const x = Math.cos(angle) * radiusAtHeight * scale;
+            const z = Math.sin(angle) * radiusAtHeight * scale;
+            points.push(new THREE.Vector3(x, y * scale, z));
+          }
+        }
+
+        // Branches with recursive structure
+        function addBranch(origin, direction, length, radius, level) {
+          if (level > 3 || length < 1) return;
+
+          const segments = 10;
+          for (let i = 0; i <= segments; i++) {
+            const t = i / segments;
+            const pos = origin
+              .clone()
+              .add(direction.clone().multiplyScalar(length * t));
+
+            // Add thickness
+            for (let j = 0; j < 5; j++) {
+              const offset = new THREE.Vector3(
+                (Math.random() - 0.5) * radius,
+                (Math.random() - 0.5) * radius,
+                (Math.random() - 0.5) * radius
+              );
+              points.push(pos.clone().add(offset));
+            }
+
+            // Create sub-branches
+            if (i === segments) {
+              const branches = 2 + Math.floor(Math.random() * 2);
+              for (let b = 0; b < branches; b++) {
+                const newDir = direction.clone();
+                newDir.x += (Math.random() - 0.5) * 0.8;
+                newDir.y += Math.random() * 0.5;
+                newDir.z += (Math.random() - 0.5) * 0.8;
+                newDir.normalize();
+
+                addBranch(pos, newDir, length * 0.7, radius * 0.6, level + 1);
+              }
+            }
+          }
+        }
+
+        // Main branches from trunk
+        const numMainBranches = 6;
+        for (let i = 0; i < numMainBranches; i++) {
+          const angle = (i / numMainBranches) * Math.PI * 2;
+          const height = -15 + trunkHeight * (0.5 + Math.random() * 0.3);
+          const origin = new THREE.Vector3(
+            Math.cos(angle) * trunkRadius * scale,
+            height * scale,
+            Math.sin(angle) * trunkRadius * scale
+          );
+          const direction = new THREE.Vector3(
+            Math.cos(angle) * 0.7,
+            0.6 + Math.random() * 0.3,
+            Math.sin(angle) * 0.7
+          ).normalize();
+
+          addBranch(origin, direction, 12 * scale, 2 * scale, 0);
+        }
+
+        // Foliage clusters
+        for (let cluster = 0; cluster < 30; cluster++) {
+          const theta = Math.random() * Math.PI;
+          const phi = Math.random() * Math.PI * 2;
+          const r = 15 + Math.random() * 10;
+          const cx = r * Math.sin(theta) * Math.cos(phi) * scale;
+          const cy = r * (0.5 + Math.random() * 0.5) * scale;
+          const cz = r * Math.sin(theta) * Math.sin(phi) * scale;
+
+          // Create leaf cluster
+          for (let leaf = 0; leaf < 50; leaf++) {
+            const leafR = Math.random() * 3;
+            const leafTheta = Math.random() * Math.PI;
+            const leafPhi = Math.random() * Math.PI * 2;
+
+            const x =
+              cx + leafR * Math.sin(leafTheta) * Math.cos(leafPhi) * scale;
+            const y = cy + leafR * Math.cos(leafTheta) * scale;
+            const z =
+              cz + leafR * Math.sin(leafTheta) * Math.sin(leafPhi) * scale;
+
+            points.push(new THREE.Vector3(x, y, z));
+          }
+        }
+
+        // Roots
+        const numRoots = 8;
+        for (let i = 0; i < numRoots; i++) {
+          const angle = (i / numRoots) * Math.PI * 2 + Math.random() * 0.5;
+          for (let t = 0; t < 1; t += 0.05) {
+            const spread = t * 10;
+            const x = Math.cos(angle) * spread * scale;
+            const y = -15 - t * 5 * scale;
+            const z = Math.sin(angle) * spread * scale;
+
+            for (let j = 0; j < 5; j++) {
+              points.push(
+                new THREE.Vector3(
+                  x + (Math.random() - 0.5) * 2,
+                  y + Math.random(),
+                  z + (Math.random() - 0.5) * 2
+                )
+              );
+            }
+          }
+        }
+
+        distributePointsToParticles(points);
+      }
+
+      function generateAngkorWat() {
+        const points = [];
+        const scale = 0.5;
+
+        // Multi-level base platforms (3 tiers)
+        const platforms = [
+          { width: 70, depth: 60, height: 2, y: -20 },
+          { width: 55, depth: 45, height: 2, y: -18 },
+          { width: 40, depth: 30, height: 2, y: -16 }
+        ];
+        
+        for (let platform of platforms) {
+          for (let x = -platform.width/2; x <= platform.width/2; x += 1.5) {
+            for (let z = -platform.depth/2; z <= platform.depth/2; z += 1.5) {
+              // Platform surface
+              for (let y = platform.y; y < platform.y + platform.height; y += 0.3) {
+                points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+              }
+              // Platform edges with decorative molding
+              if (Math.abs(x) > platform.width/2 - 2 || Math.abs(z) > platform.depth/2 - 2) {
+                for (let y = platform.y - 1; y < platform.y; y += 0.2) {
+                  points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+                }
+              }
+            }
+          }
+        }
+
+        // Central tower (prasat) with more detail
+        function createTower(centerX, centerY, centerZ, width, height, isMain = false) {
+          const tiers = isMain ? 9 : 6;
+          
+          for (let tier = 0; tier < tiers; tier++) {
+            const tierHeight = height / tiers;
+            const tierWidth = width * (1 - tier * 0.12);
+            const y0 = centerY + tier * tierHeight;
+            const y1 = centerY + (tier + 1) * tierHeight;
+            
+            // Tower walls with vertical ridges
+            for (let y = y0; y < y1; y += 0.3) {
+              for (let angle = 0; angle < Math.PI * 2; angle += 0.05) {
+                const r = tierWidth / 2;
+                // Add vertical ridges
+                const ridgePattern = Math.sin(angle * 8) * 0.3;
+                const adjustedR = r + ridgePattern;
+                const x = centerX + Math.cos(angle) * adjustedR;
+                const z = centerZ + Math.sin(angle) * adjustedR;
+                points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+              }
+            }
+            
+            // Horizontal bands between tiers
+            if (tier < tiers - 1) {
+              for (let angle = 0; angle < Math.PI * 2; angle += 0.03) {
+                const r = tierWidth / 2 + 1;
+                const x = centerX + Math.cos(angle) * r;
+                const z = centerZ + Math.sin(angle) * r;
+                for (let h = 0; h < 0.5; h += 0.1) {
+                  points.push(new THREE.Vector3(x * scale, (y1 + h) * scale, z * scale));
+                }
+              }
+            }
+            
+            // Decorative false doors (4 per tier)
+            if (tier > 0 && tier < tiers - 2) {
+              for (let i = 0; i < 4; i++) {
+                const doorAngle = (i / 4) * Math.PI * 2;
+                const doorX = centerX + Math.cos(doorAngle) * tierWidth * 0.45;
+                const doorZ = centerZ + Math.sin(doorAngle) * tierWidth * 0.45;
+                
+                // Door frame
+                for (let dy = 0; dy < tierHeight * 0.8; dy += 0.2) {
+                  for (let dx = -1; dx <= 1; dx += 0.2) {
+                    points.push(new THREE.Vector3(
+                      (doorX + Math.cos(doorAngle + Math.PI/2) * dx) * scale,
+                      (y0 + dy) * scale,
+                      (doorZ + Math.sin(doorAngle + Math.PI/2) * dx) * scale
+                    ));
+                  }
+                }
+              }
+            }
+          }
+          
+          // Elaborate lotus bud top with petals
+          const topY = centerY + height;
+          // Stem
+          for (let h = 0; h < 3; h += 0.1) {
+            for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
+              const r = 1.5 - h * 0.3;
+              const x = centerX + Math.cos(angle) * r;
+              const z = centerZ + Math.sin(angle) * r;
+              points.push(new THREE.Vector3(x * scale, (topY + h) * scale, z * scale));
+            }
+          }
+          // Lotus petals
+          for (let petal = 0; petal < 8; petal++) {
+            const petalAngle = (petal / 8) * Math.PI * 2;
+            for (let i = 0; i < 50; i++) {
+              const t = i / 50;
+              const petalR = 3 * Math.sin(t * Math.PI) * (1 - t * 0.3);
+              const petalH = topY + 3 + t * 4;
+              const spread = Math.sin(t * Math.PI) * 0.5;
+              const x = centerX + Math.cos(petalAngle + spread) * petalR;
+              const z = centerZ + Math.sin(petalAngle + spread) * petalR;
+              points.push(new THREE.Vector3(x * scale, petalH * scale, z * scale));
+            }
+          }
+        }
+
+        // Main central tower
+        createTower(0, -14, 0, 15, 45, true);
+
+        // Four corner towers in quincunx pattern
+        const cornerPositions = [
+          [-18, -14, -15],
+          [18, -14, -15],
+          [-18, -14, 15],
+          [18, -14, 15]
+        ];
+        
+        for (let pos of cornerPositions) {
+          createTower(pos[0], pos[1], pos[2], 10, 30);
+        }
+
+        // Additional intermediate towers
+        const intermediateTowers = [
+          [-9, -14, -8],
+          [9, -14, -8],
+          [-9, -14, 8],
+          [9, -14, 8],
+          [0, -14, -15],
+          [0, -14, 15],
+          [-15, -14, 0],
+          [15, -14, 0]
+        ];
+        
+        for (let pos of intermediateTowers) {
+          createTower(pos[0], pos[1], pos[2], 6, 20);
+        }
+
+        // Triple-layer galleries with colonnade
+        const galleries = [
+          { r1: 35, r2: 38, height: 10, y: -14 },
+          { r1: 28, r2: 31, height: 8, y: -12 },
+          { r1: 22, r2: 24, height: 6, y: -10 }
+        ];
+        
+        for (let gallery of galleries) {
+          // Gallery walls with windows
+          for (let angle = 0; angle < Math.PI * 2; angle += 0.03) {
+            for (let y = gallery.y; y < gallery.y + gallery.height; y += 0.3) {
+              // Outer wall with window openings
+              const windowPattern = Math.abs(Math.sin(angle * 12)) > 0.5;
+              if (windowPattern || y < gallery.y + 1 || y > gallery.y + gallery.height - 2) {
+                const x1 = Math.cos(angle) * gallery.r2;
+                const z1 = Math.sin(angle) * gallery.r2;
+                points.push(new THREE.Vector3(x1 * scale, y * scale, z1 * scale));
+              }
+              
+              // Inner wall
+              const x2 = Math.cos(angle) * gallery.r1;
+              const z2 = Math.sin(angle) * gallery.r1;
+              points.push(new THREE.Vector3(x2 * scale, y * scale, z2 * scale));
+              
+              // Columns between walls
+              if (Math.floor(angle * 8) % 1 === 0) {
+                const colR = (gallery.r1 + gallery.r2) / 2;
+                const colX = Math.cos(angle) * colR;
+                const colZ = Math.sin(angle) * colR;
+                for (let colH = 0; colH < gallery.height; colH += 0.2) {
+                  points.push(new THREE.Vector3(colX * scale, (gallery.y + colH) * scale, colZ * scale));
+                }
+              }
+            }
+            
+            // Roof structure
+            const roofLevels = 3;
+            for (let level = 0; level < roofLevels; level++) {
+              const roofY = gallery.y + gallery.height + level * 0.5;
+              const roofR1 = gallery.r1 - level * 0.5;
+              const roofR2 = gallery.r2 + 1 - level * 0.5;
+              for (let r = roofR1; r <= roofR2; r += 0.5) {
+                const x = Math.cos(angle) * r;
+                const z = Math.sin(angle) * r;
+                points.push(new THREE.Vector3(x * scale, roofY * scale, z * scale));
+              }
+            }
+          }
+        }
+
+        // Cruciform corridors with vaulted ceilings
+        const corridorPaths = [
+          { start: [0, -38], end: [0, -35], width: 4 },
+          { start: [0, 35], end: [0, 38], width: 4 },
+          { start: [-38, 0], end: [-35, 0], width: 4 },
+          { start: [35, 0], end: [38, 0], width: 4 }
+        ];
+        
+        for (let corridor of corridorPaths) {
+          const [start, end] = [corridor.start, corridor.end];
+          for (let t = 0; t <= 1; t += 0.05) {
+            const x = start[0] + (end[0] - start[0]) * t;
+            const z = start[1] + (end[1] - start[1]) * t;
+            
+            // Corridor walls and vaulted ceiling
+            for (let y = -14; y < -14 + 10; y += 0.3) {
+              for (let offset = -corridor.width; offset <= corridor.width; offset += 0.3) {
+                // Walls
+                if (Math.abs(offset) > corridor.width - 0.5 || y < -13) {
+                  if (Math.abs(start[0] - end[0]) < 0.1) {
+                    points.push(new THREE.Vector3((x + offset) * scale, y * scale, z * scale));
+                  } else {
+                    points.push(new THREE.Vector3(x * scale, y * scale, (z + offset) * scale));
+                  }
+                }
+                
+                // Vaulted ceiling
+                if (y > -6) {
+                  const ceilingCurve = Math.sqrt(1 - Math.pow(offset / corridor.width, 2));
+                  const ceilingY = y * ceilingCurve;
+                  if (Math.abs(start[0] - end[0]) < 0.1) {
+                    points.push(new THREE.Vector3((x + offset) * scale, ceilingY * scale, z * scale));
+                  } else {
+                    points.push(new THREE.Vector3(x * scale, ceilingY * scale, (z + offset) * scale));
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // Elaborate Naga balustrades with 7 heads
+        for (let side = 0; side < 4; side++) {
+          const angle = (side / 4) * Math.PI * 2;
+          const startR = 38;
+          const endR = 45;
+          
+          // Main serpent body
+          for (let t = 0; t <= 1; t += 0.01) {
+            const r = startR + (endR - startR) * t;
+            const x = Math.cos(angle) * r;
+            const z = Math.sin(angle) * r;
+            const y = -16 + Math.sin(t * Math.PI * 6) * 1.5;
+            
+            // Thicker body with scales
+            const bodyThickness = 1.5 - t * 0.5;
+            for (let i = 0; i < 20; i++) {
+              const scaleAngle = (i / 20) * Math.PI * 2;
+              const scaleOffset = Math.sin(scaleAngle + t * 20) * 0.2;
+              const offsetX = Math.cos(angle + Math.PI/2) * Math.cos(scaleAngle) * (bodyThickness + scaleOffset);
+              const offsetZ = Math.sin(angle + Math.PI/2) * Math.cos(scaleAngle) * (bodyThickness + scaleOffset);
+              const offsetY = Math.sin(scaleAngle) * bodyThickness;
+              points.push(new THREE.Vector3(
+                (x + offsetX) * scale,
+                (y + offsetY) * scale,
+                (z + offsetZ) * scale
+              ));
+            }
+          }
+          
+          // Seven-headed hood at the end
+          const hoodX = Math.cos(angle) * endR;
+          const hoodZ = Math.sin(angle) * endR;
+          for (let head = -3; head <= 3; head++) {
+            const headOffset = head * 2;
+            const headX = hoodX + Math.cos(angle + Math.PI/2) * headOffset;
+            const headZ = hoodZ + Math.sin(angle + Math.PI/2) * headOffset;
+            
+            // Each head
+            for (let h = 0; h < 5; h += 0.2) {
+              for (let a = 0; a < Math.PI * 2; a += 0.2) {
+                const headR = 1.5 - h * 0.2;
+                const x = headX + Math.cos(a) * headR;
+                const z = headZ + Math.sin(a) * headR;
+                const y = -14 + h + Math.abs(head) * 0.5;
+                points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+              }
+            }
+          }
+        }
+
+        // Library buildings in corners
+        const libraries = [
+          { x: -25, z: -25 },
+          { x: 25, z: -25 },
+          { x: -25, z: 25 },
+          { x: 25, z: 25 }
+        ];
+        
+        for (let lib of libraries) {
+          // Library structure
+          for (let x = lib.x - 3; x <= lib.x + 3; x += 0.5) {
+            for (let z = lib.z - 3; z <= lib.z + 3; z += 0.5) {
+              for (let y = -14; y < -14 + 8; y += 0.3) {
+                if (Math.abs(x - lib.x) > 2.5 || Math.abs(z - lib.z) > 2.5 || y < -13 || y > -7) {
+                  points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+                }
+              }
+            }
+          }
+          // Library roof
+          createTower(lib.x, -6, lib.z, 5, 8, false);
+        }
+
+        // Bas-relief details on walls (simulated with dense points)
+        for (let i = 0; i < 1000; i++) {
+          const wallAngle = Math.random() * Math.PI * 2;
+          const wallR = 35 + Math.random() * 3;
+          const wallX = Math.cos(wallAngle) * wallR;
+          const wallZ = Math.sin(wallAngle) * wallR;
+          const wallY = -14 + Math.random() * 8;
+          points.push(new THREE.Vector3(wallX * scale, wallY * scale, wallZ * scale));
+        }
+
+        // Stairs on all four sides
+        for (let side = 0; side < 4; side++) {
+          const stairAngle = (side / 4) * Math.PI * 2;
+          for (let step = 0; step < 15; step++) {
+            const stepR = 38 + step * 0.5;
+            const stepY = -16 + step * 0.3;
+            for (let w = -3; w <= 3; w += 0.5) {
+              const x = Math.cos(stairAngle) * stepR + Math.cos(stairAngle + Math.PI/2) * w;
+              const z = Math.sin(stairAngle) * stepR + Math.sin(stairAngle + Math.PI/2) * w;
+              points.push(new THREE.Vector3(x * scale, stepY * scale, z * scale));
+            }
+          }
+        }
+
+        distributePointsToParticles(points);
+      }
+
+      function distributePointsToParticles(points) {
+        // Ensure we have enough points
+        while (points.length < PARTICLE_COUNT) {
+          points.push(
+            points[Math.floor(Math.random() * points.length)].clone()
+          );
+        }
+
+        // Shuffle points for better distribution
+        for (let i = points.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [points[i], points[j]] = [points[j], points[i]];
+        }
+
+        // Assign to particles
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+          const point = points[i % points.length];
+          targetPositions[i * 3] = point.x;
+          targetPositions[i * 3 + 1] = point.y;
+          targetPositions[i * 3 + 2] = point.z;
+        }
+      }
+
+      function initEventListeners() {
+        // Shape buttons
+        document.querySelectorAll(".button").forEach((button) => {
+          button.addEventListener("click", (e) => {
+            if (selectedButton) {
+              selectedButton.classList.remove("active");
+            }
+            selectedButton = e.target;
+            selectedButton.classList.add("active");
+
+            const shape = e.target.dataset.shape;
+            morphToShape(shape);
+          });
+        });
+
+        // Controls
+        document
+          .getElementById("particleSize")
+          .addEventListener("input", (e) => {
+            params.particleSize = parseFloat(e.target.value);
+            particleMaterial.uniforms.uSize.value = params.particleSize;
+            document.getElementById("sizeValue").textContent =
+              params.particleSize.toFixed(1);
+          });
+
+        document
+          .getElementById("rotationSpeed")
+          .addEventListener("input", (e) => {
+            params.rotationSpeed = parseFloat(e.target.value);
+            document.getElementById("speedValue").textContent =
+              params.rotationSpeed.toFixed(1);
+          });
+
+        document
+          .getElementById("particleColor")
+          .addEventListener("input", (e) => {
+            params.particleColor.set(e.target.value);
+            particleMaterial.uniforms.uColor.value = params.particleColor;
+          });
+
+        document
+          .getElementById("bloomStrength")
+          .addEventListener("input", (e) => {
+            params.bloomStrength = parseFloat(e.target.value);
+            bloomPass.strength = params.bloomStrength;
+            document.getElementById("bloomValue").textContent =
+              params.bloomStrength.toFixed(1);
+          });
+
+        document
+          .getElementById("motionTrail")
+          .addEventListener("input", (e) => {
+            params.motionTrail = parseFloat(e.target.value);
+            document.getElementById("trailValue").textContent =
+              params.motionTrail.toFixed(2);
+          });
+
+        // Window resize
+        window.addEventListener("resize", onWindowResize);
+
+        // Double-click reset
+        renderer.domElement.addEventListener("dblclick", () => {
+          controls.reset();
+        });
+      }
+
+      function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        composer.setSize(window.innerWidth, window.innerHeight);
+        previousRenderTarget.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      function updateMorphing(deltaTime) {
+        if (!isMorphing) return;
+
+        morphProgress += deltaTime * 0.8; // Morph speed
+        if (morphProgress >= 1.0) {
+          morphProgress = 1.0;
+          isMorphing = false;
+        }
+
+        // Smooth easing function
+        const eased = 1 - Math.pow(1 - morphProgress, 3);
+
+        // Update particle positions
+        const positions = particleSystem.geometry.attributes.position.array;
+        for (let i = 0; i < positions.length; i++) {
+          positions[i] =
+            originalPositions[i] +
+            (targetPositions[i] - originalPositions[i]) * eased;
+        }
+        particleSystem.geometry.attributes.position.needsUpdate = true;
+
+        particleMaterial.uniforms.uMorphProgress.value = eased;
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+
+        const deltaTime = clock.getDelta();
+        const elapsedTime = clock.getElapsedTime();
+
+        // Update controls
+        controls.update();
+
+        // Update particle system
+        if (particleSystem) {
+          particleSystem.rotation.y += params.rotationSpeed * deltaTime;
+          particleMaterial.uniforms.uTime.value = elapsedTime;
+          updateMorphing(deltaTime);
+        }
+
+        // Store current frame for motion blur
+        renderer.setRenderTarget(previousRenderTarget);
+        renderer.render(scene, camera);
+        renderer.setRenderTarget(null);
+
+        // Update motion blur uniform
+        if (composer.passes[3]) {
+          composer.passes[3].uniforms.uBlendFactor.value = params.motionTrail;
+        }
+
+        // Render with post-processing
+        composer.render();
+      }
+    </script>
+  </body>
+</html>
