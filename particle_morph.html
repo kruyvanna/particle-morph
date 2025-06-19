@@ -1317,27 +1317,33 @@
           }
         }
 
-        // Library buildings in corners
+        // Library buildings in corners (without towers - just low structures)
         const libraries = [
-          { x: -25, z: -25 },
-          { x: 25, z: -25 },
-          { x: -25, z: 25 },
-          { x: 25, z: 25 }
+          { x: -30, z: -30 },
+          { x: 30, z: -30 },
+          { x: -30, z: 30 },
+          { x: 30, z: 30 }
         ];
         
         for (let lib of libraries) {
-          // Library structure
-          for (let x = lib.x - 3; x <= lib.x + 3; x += 0.5) {
-            for (let z = lib.z - 3; z <= lib.z + 3; z += 0.5) {
-              for (let y = -14; y < -14 + 8; y += 0.3) {
-                if (Math.abs(x - lib.x) > 2.5 || Math.abs(z - lib.z) > 2.5 || y < -13 || y > -7) {
+          // Simple library structure without tower
+          for (let x = lib.x - 4; x <= lib.x + 4; x += 0.4) {
+            for (let z = lib.z - 3; z <= lib.z + 3; z += 0.4) {
+              for (let y = -14; y < -14 + 4; y += 0.3) {
+                // Create walls only (hollow interior)
+                if (Math.abs(x - lib.x) > 3 || Math.abs(z - lib.z) > 2 || y < -13.5 || y > -11) {
                   points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
                 }
               }
             }
           }
-          // Library roof
-          createTower(lib.x, -6, lib.z, 5, 8, false);
+          
+          // Simple flat roof (no tower)
+          for (let x = lib.x - 4; x <= lib.x + 4; x += 0.5) {
+            for (let z = lib.z - 3; z <= lib.z + 3; z += 0.5) {
+              points.push(new THREE.Vector3(x * scale, (-14 + 4) * scale, z * scale));
+            }
+          }
         }
 
         // Bas-relief panels depicting scenes from Ramayana and Mahabharata
