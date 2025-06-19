@@ -887,23 +887,35 @@
         const points = [];
         const scale = 0.5;
 
-        // Multi-level base platforms (3 tiers)
+        // Multi-level base platforms (3 tiers) with moat representation
         const platforms = [
-          { width: 70, depth: 60, height: 2, y: -20 },
-          { width: 55, depth: 45, height: 2, y: -18 },
-          { width: 40, depth: 30, height: 2, y: -16 }
+          { width: 85, depth: 75, height: 1.5, y: -20 }, // Outer moat edge
+          { width: 70, depth: 60, height: 2, y: -19 },
+          { width: 55, depth: 45, height: 2, y: -17 },
+          { width: 40, depth: 30, height: 2, y: -15 }
         ];
         
-        for (let platform of platforms) {
-          for (let x = -platform.width/2; x <= platform.width/2; x += 1.5) {
-            for (let z = -platform.depth/2; z <= platform.depth/2; z += 1.5) {
-              // Platform surface
-              for (let y = platform.y; y < platform.y + platform.height; y += 0.3) {
-                points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+        for (let p = 0; p < platforms.length; p++) {
+          const platform = platforms[p];
+          for (let x = -platform.width/2; x <= platform.width/2; x += 1.2) {
+            for (let z = -platform.depth/2; z <= platform.depth/2; z += 1.2) {
+              // Platform surface with subtle texture
+              for (let y = platform.y; y < platform.y + platform.height; y += 0.25) {
+                // Add sandstone texture variation
+                const textureNoise = (Math.sin(x * 0.5) * Math.sin(z * 0.5)) * 0.1;
+                points.push(new THREE.Vector3(x * scale, (y + textureNoise) * scale, z * scale));
               }
-              // Platform edges with decorative molding
-              if (Math.abs(x) > platform.width/2 - 2 || Math.abs(z) > platform.depth/2 - 2) {
-                for (let y = platform.y - 1; y < platform.y; y += 0.2) {
+              
+              // Decorative balustrade on platform edges
+              if (p > 0 && (Math.abs(x) > platform.width/2 - 2 || Math.abs(z) > platform.depth/2 - 2)) {
+                // Balustrade posts
+                if (Math.floor(x) % 3 === 0 && Math.floor(z) % 3 === 0) {
+                  for (let h = 0; h < 1.5; h += 0.1) {
+                    points.push(new THREE.Vector3(x * scale, (platform.y + platform.height + h) * scale, z * scale));
+                  }
+                }
+                // Balustrade rail
+                for (let y = platform.y - 0.5; y < platform.y; y += 0.15) {
                   points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
                 }
               }
@@ -911,175 +923,263 @@
           }
         }
 
-        // Central tower (prasat) with more detail
+        // Central tower (prasat) with authentic Khmer architectural details
         function createTower(centerX, centerY, centerZ, width, height, isMain = false) {
           const tiers = isMain ? 9 : 6;
           
+          // Square base with corner indentations (redented square plan)
           for (let tier = 0; tier < tiers; tier++) {
             const tierHeight = height / tiers;
             const tierWidth = width * (1 - tier * 0.12);
             const y0 = centerY + tier * tierHeight;
             const y1 = centerY + (tier + 1) * tierHeight;
             
-            // Tower walls with vertical ridges
-            for (let y = y0; y < y1; y += 0.3) {
-              for (let angle = 0; angle < Math.PI * 2; angle += 0.05) {
-                const r = tierWidth / 2;
-                // Add vertical ridges
-                const ridgePattern = Math.sin(angle * 8) * 0.3;
-                const adjustedR = r + ridgePattern;
-                const x = centerX + Math.cos(angle) * adjustedR;
-                const z = centerZ + Math.sin(angle) * adjustedR;
-                points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+            // Tower walls with authentic Khmer profile
+            for (let y = y0; y < y1; y += 0.25) {
+              // Create redented square shape (cross-shaped floor plan)
+              for (let side = 0; side < 4; side++) {
+                const sideAngle = (side / 4) * Math.PI * 2;
+                
+                // Main wall segments
+                for (let t = -0.4; t <= 0.4; t += 0.02) {
+                  const wallX = centerX + Math.cos(sideAngle) * tierWidth/2 + Math.cos(sideAngle + Math.PI/2) * t * tierWidth;
+                  const wallZ = centerZ + Math.sin(sideAngle) * tierWidth/2 + Math.sin(sideAngle + Math.PI/2) * t * tierWidth;
+                  points.push(new THREE.Vector3(wallX * scale, y * scale, wallZ * scale));
+                }
+                
+                // Corner projections (creating the redented effect)
+                const cornerAngle = sideAngle + Math.PI/4;
+                for (let proj = 0; proj < 0.3; proj += 0.05) {
+                  const projX = centerX + Math.cos(cornerAngle) * (tierWidth/2 - proj);
+                  const projZ = centerZ + Math.sin(cornerAngle) * (tierWidth/2 - proj);
+                  points.push(new THREE.Vector3(projX * scale, y * scale, projZ * scale));
+                }
               }
-            }
-            
-            // Horizontal bands between tiers
-            if (tier < tiers - 1) {
-              for (let angle = 0; angle < Math.PI * 2; angle += 0.03) {
-                const r = tierWidth / 2 + 1;
-                const x = centerX + Math.cos(angle) * r;
-                const z = centerZ + Math.sin(angle) * r;
-                for (let h = 0; h < 0.5; h += 0.1) {
-                  points.push(new THREE.Vector3(x * scale, (y1 + h) * scale, z * scale));
+              
+              // Vertical pilasters on each face
+              for (let i = 0; i < 4; i++) {
+                const pilasterAngle = (i / 4) * Math.PI * 2;
+                for (let p = -0.3; p <= 0.3; p += 0.15) {
+                  const pilasterR = tierWidth/2 + Math.sin(y * 0.5) * 0.2; // Subtle entasis
+                  const px = centerX + Math.cos(pilasterAngle) * pilasterR + Math.cos(pilasterAngle + Math.PI/2) * p * tierWidth/3;
+                  const pz = centerZ + Math.sin(pilasterAngle) * pilasterR + Math.sin(pilasterAngle + Math.PI/2) * p * tierWidth/3;
+                  points.push(new THREE.Vector3(px * scale, y * scale, pz * scale));
                 }
               }
             }
             
-            // Decorative false doors (4 per tier)
+            // Elaborate cornice between tiers
+            if (tier < tiers - 1) {
+              for (let c = 0; c < 3; c++) {
+                const corniceY = y1 + c * 0.2;
+                const corniceR = tierWidth/2 + (2 - c) * 0.3;
+                for (let angle = 0; angle < Math.PI * 2; angle += 0.02) {
+                  // Antefixes (decorative roof edge ornaments)
+                  const antefixPattern = Math.abs(Math.sin(angle * 16)) * 0.2;
+                  const x = centerX + Math.cos(angle) * (corniceR + antefixPattern);
+                  const z = centerZ + Math.sin(angle) * (corniceR + antefixPattern);
+                  points.push(new THREE.Vector3(x * scale, corniceY * scale, z * scale));
+                }
+              }
+            }
+            
+            // Devata (deity) niches on each face
             if (tier > 0 && tier < tiers - 2) {
               for (let i = 0; i < 4; i++) {
-                const doorAngle = (i / 4) * Math.PI * 2;
-                const doorX = centerX + Math.cos(doorAngle) * tierWidth * 0.45;
-                const doorZ = centerZ + Math.sin(doorAngle) * tierWidth * 0.45;
+                const nicheAngle = (i / 4) * Math.PI * 2;
+                const nicheX = centerX + Math.cos(nicheAngle) * tierWidth * 0.48;
+                const nicheZ = centerZ + Math.sin(nicheAngle) * tierWidth * 0.48;
                 
-                // Door frame
-                for (let dy = 0; dy < tierHeight * 0.8; dy += 0.2) {
-                  for (let dx = -1; dx <= 1; dx += 0.2) {
+                // Niche frame with pediment
+                for (let ny = 0; ny < tierHeight * 0.7; ny += 0.15) {
+                  // Triangular pediment at top
+                  const pedimentWidth = ny < tierHeight * 0.5 ? 1.5 : 1.5 * (1 - (ny - tierHeight * 0.5) / (tierHeight * 0.2));
+                  for (let nx = -pedimentWidth; nx <= pedimentWidth; nx += 0.1) {
                     points.push(new THREE.Vector3(
-                      (doorX + Math.cos(doorAngle + Math.PI/2) * dx) * scale,
-                      (y0 + dy) * scale,
-                      (doorZ + Math.sin(doorAngle + Math.PI/2) * dx) * scale
+                      (nicheX + Math.cos(nicheAngle + Math.PI/2) * nx) * scale,
+                      (y0 + ny) * scale,
+                      (nicheZ + Math.sin(nicheAngle + Math.PI/2) * nx) * scale
                     ));
                   }
+                }
+                
+                // Devata figure suggestion
+                for (let fig = 0; fig < 30; fig++) {
+                  const figY = y0 + tierHeight * 0.2 + Math.random() * tierHeight * 0.4;
+                  const figOffset = (Math.random() - 0.5) * 0.5;
+                  points.push(new THREE.Vector3(
+                    (nicheX + Math.cos(nicheAngle + Math.PI/2) * figOffset) * scale,
+                    figY * scale,
+                    (nicheZ + Math.sin(nicheAngle + Math.PI/2) * figOffset) * scale
+                  ));
                 }
               }
             }
           }
           
-          // Elaborate lotus bud top with petals
+          // Distinctive Khmer-style lotus bud (typical of Angkor Wat towers)
           const topY = centerY + height;
-          // Stem
-          for (let h = 0; h < 3; h += 0.1) {
-            for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
-              const r = 1.5 - h * 0.3;
-              const x = centerX + Math.cos(angle) * r;
-              const z = centerZ + Math.sin(angle) * r;
-              points.push(new THREE.Vector3(x * scale, (topY + h) * scale, z * scale));
+          
+          // Multiple rings forming the bud base
+          for (let ring = 0; ring < 4; ring++) {
+            const ringY = topY + ring * 0.4;
+            const ringR = 2 - ring * 0.3;
+            for (let angle = 0; angle < Math.PI * 2; angle += 0.05) {
+              const wobble = Math.sin(angle * 8) * 0.1;
+              const x = centerX + Math.cos(angle) * (ringR + wobble);
+              const z = centerZ + Math.sin(angle) * (ringR + wobble);
+              points.push(new THREE.Vector3(x * scale, ringY * scale, z * scale));
             }
           }
-          // Lotus petals
-          for (let petal = 0; petal < 8; petal++) {
-            const petalAngle = (petal / 8) * Math.PI * 2;
-            for (let i = 0; i < 50; i++) {
-              const t = i / 50;
-              const petalR = 3 * Math.sin(t * Math.PI) * (1 - t * 0.3);
-              const petalH = topY + 3 + t * 4;
-              const spread = Math.sin(t * Math.PI) * 0.5;
-              const x = centerX + Math.cos(petalAngle + spread) * petalR;
-              const z = centerZ + Math.sin(petalAngle + spread) * petalR;
-              points.push(new THREE.Vector3(x * scale, petalH * scale, z * scale));
+          
+          // Conical lotus bud shape (closed bud, not open petals)
+          for (let h = 0; h < 6; h += 0.1) {
+            const budR = (1.5 - h * 0.25) * Math.sin(h * 0.3);
+            for (let angle = 0; angle < Math.PI * 2; angle += 0.08) {
+              // Vertical ridges on the bud
+              const ridgePattern = Math.sin(angle * 12) * 0.15;
+              const x = centerX + Math.cos(angle) * (budR + ridgePattern);
+              const z = centerZ + Math.sin(angle) * (budR + ridgePattern);
+              points.push(new THREE.Vector3(x * scale, (topY + 1.5 + h) * scale, z * scale));
+            }
+          }
+          
+          // Finial spike at the very top
+          for (let h = 0; h < 2; h += 0.1) {
+            const spikeR = 0.3 - h * 0.15;
+            for (let angle = 0; angle < Math.PI * 2; angle += 0.2) {
+              const x = centerX + Math.cos(angle) * spikeR;
+              const z = centerZ + Math.sin(angle) * spikeR;
+              points.push(new THREE.Vector3(x * scale, (topY + 7.5 + h) * scale, z * scale));
             }
           }
         }
 
-        // Main central tower
-        createTower(0, -14, 0, 15, 45, true);
+        // Main central tower - the tallest
+        createTower(0, -14, 0, 16, 50, true);
 
-        // Four corner towers in quincunx pattern
+        // Four corner towers in perfect quincunx pattern (forming a square)
         const cornerPositions = [
-          [-18, -14, -15],
-          [18, -14, -15],
-          [-18, -14, 15],
-          [18, -14, 15]
+          [-20, -14, -20],
+          [20, -14, -20],
+          [-20, -14, 20],
+          [20, -14, 20]
         ];
         
         for (let pos of cornerPositions) {
-          createTower(pos[0], pos[1], pos[2], 10, 30);
+          createTower(pos[0], pos[1], pos[2], 12, 35);
         }
 
-        // Additional intermediate towers
-        const intermediateTowers = [
-          [-9, -14, -8],
-          [9, -14, -8],
-          [-9, -14, 8],
-          [9, -14, 8],
-          [0, -14, -15],
-          [0, -14, 15],
-          [-15, -14, 0],
-          [15, -14, 0]
+        // Three concentric rectangular enclosures (as seen in aerial photos)
+        const enclosures = [
+          { width: 76, depth: 68, wallThickness: 2, height: 10, y: -14 }, // Outer enclosure
+          { width: 58, depth: 50, wallThickness: 1.5, height: 8, y: -12 }, // Middle enclosure  
+          { width: 44, depth: 36, wallThickness: 1, height: 6, y: -10 }    // Inner enclosure
         ];
         
-        for (let pos of intermediateTowers) {
-          createTower(pos[0], pos[1], pos[2], 6, 20);
-        }
-
-        // Triple-layer galleries with colonnade
-        const galleries = [
-          { r1: 35, r2: 38, height: 10, y: -14 },
-          { r1: 28, r2: 31, height: 8, y: -12 },
-          { r1: 22, r2: 24, height: 6, y: -10 }
-        ];
-        
-        for (let gallery of galleries) {
-          // Gallery walls with windows
-          for (let angle = 0; angle < Math.PI * 2; angle += 0.03) {
-            for (let y = gallery.y; y < gallery.y + gallery.height; y += 0.3) {
-              // Outer wall with window openings
-              const windowPattern = Math.abs(Math.sin(angle * 12)) > 0.5;
-              if (windowPattern || y < gallery.y + 1 || y > gallery.y + gallery.height - 2) {
-                const x1 = Math.cos(angle) * gallery.r2;
-                const z1 = Math.sin(angle) * gallery.r2;
-                points.push(new THREE.Vector3(x1 * scale, y * scale, z1 * scale));
+        for (let enclosure of enclosures) {
+          const halfWidth = enclosure.width / 2;
+          const halfDepth = enclosure.depth / 2;
+          
+          // Create rectangular walls
+          for (let y = enclosure.y; y < enclosure.y + enclosure.height; y += 0.25) {
+            
+            // North and South walls
+            for (let x = -halfWidth; x <= halfWidth; x += 0.4) {
+              // North wall
+              for (let z = halfDepth - enclosure.wallThickness; z <= halfDepth; z += 0.2) {
+                // Window openings pattern
+                const windowSpacing = 8;
+                const isWindow = (Math.floor(x / windowSpacing) % 2 === 0) && 
+                                (y > enclosure.y + 2 && y < enclosure.y + enclosure.height - 2);
+                if (!isWindow || y < enclosure.y + 1 || y > enclosure.y + enclosure.height - 1) {
+                  points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+                }
               }
               
-              // Inner wall
-              const x2 = Math.cos(angle) * gallery.r1;
-              const z2 = Math.sin(angle) * gallery.r1;
-              points.push(new THREE.Vector3(x2 * scale, y * scale, z2 * scale));
-              
-              // Columns between walls
-              if (Math.floor(angle * 8) % 1 === 0) {
-                const colR = (gallery.r1 + gallery.r2) / 2;
-                const colX = Math.cos(angle) * colR;
-                const colZ = Math.sin(angle) * colR;
-                for (let colH = 0; colH < gallery.height; colH += 0.2) {
-                  points.push(new THREE.Vector3(colX * scale, (gallery.y + colH) * scale, colZ * scale));
+              // South wall
+              for (let z = -halfDepth; z <= -halfDepth + enclosure.wallThickness; z += 0.2) {
+                const windowSpacing = 8;
+                const isWindow = (Math.floor(x / windowSpacing) % 2 === 0) && 
+                                (y > enclosure.y + 2 && y < enclosure.y + enclosure.height - 2);
+                if (!isWindow || y < enclosure.y + 1 || y > enclosure.y + enclosure.height - 1) {
+                  points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
                 }
               }
             }
             
-            // Roof structure
-            const roofLevels = 3;
-            for (let level = 0; level < roofLevels; level++) {
-              const roofY = gallery.y + gallery.height + level * 0.5;
-              const roofR1 = gallery.r1 - level * 0.5;
-              const roofR2 = gallery.r2 + 1 - level * 0.5;
-              for (let r = roofR1; r <= roofR2; r += 0.5) {
-                const x = Math.cos(angle) * r;
-                const z = Math.sin(angle) * r;
-                points.push(new THREE.Vector3(x * scale, roofY * scale, z * scale));
+            // East and West walls
+            for (let z = -halfDepth + enclosure.wallThickness; z <= halfDepth - enclosure.wallThickness; z += 0.4) {
+              // East wall
+              for (let x = halfWidth - enclosure.wallThickness; x <= halfWidth; x += 0.2) {
+                const windowSpacing = 8;
+                const isWindow = (Math.floor(z / windowSpacing) % 2 === 0) && 
+                                (y > enclosure.y + 2 && y < enclosure.y + enclosure.height - 2);
+                if (!isWindow || y < enclosure.y + 1 || y > enclosure.y + enclosure.height - 1) {
+                  points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+                }
+              }
+              
+              // West wall
+              for (let x = -halfWidth; x <= -halfWidth + enclosure.wallThickness; x += 0.2) {
+                const windowSpacing = 8;
+                const isWindow = (Math.floor(z / windowSpacing) % 2 === 0) && 
+                                (y > enclosure.y + 2 && y < enclosure.y + enclosure.height - 2);
+                if (!isWindow || y < enclosure.y + 1 || y > enclosure.y + enclosure.height - 1) {
+                  points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+                }
+              }
+            }
+          }
+          
+          // Corner pillars
+          const corners = [
+            [halfWidth - 1, halfDepth - 1],
+            [-halfWidth + 1, halfDepth - 1],
+            [halfWidth - 1, -halfDepth + 1],
+            [-halfWidth + 1, -halfDepth + 1]
+          ];
+          
+          for (let corner of corners) {
+            for (let y = enclosure.y; y < enclosure.y + enclosure.height; y += 0.2) {
+              for (let px = -0.5; px <= 0.5; px += 0.2) {
+                for (let pz = -0.5; pz <= 0.5; pz += 0.2) {
+                  points.push(new THREE.Vector3(
+                    (corner[0] + px) * scale, 
+                    y * scale, 
+                    (corner[1] + pz) * scale
+                  ));
+                }
+              }
+            }
+          }
+          
+          // Colonnade between walls (inner gallery)
+          if (enclosure.width < 60) { // Only for inner enclosures
+            const colSpacing = 6;
+            for (let x = -halfWidth + colSpacing; x < halfWidth; x += colSpacing) {
+              for (let z = -halfDepth + colSpacing; z < halfDepth; z += colSpacing) {
+                if (Math.abs(x) > 5 || Math.abs(z) > 5) { // Don't place columns too close to center
+                  for (let y = enclosure.y; y < enclosure.y + enclosure.height; y += 0.3) {
+                    for (let r = 0; r < 360; r += 45) {
+                      const colR = 0.3;
+                      const colX = x + Math.cos(r * Math.PI / 180) * colR;
+                      const colZ = z + Math.sin(r * Math.PI / 180) * colR;
+                      points.push(new THREE.Vector3(colX * scale, y * scale, colZ * scale));
+                    }
+                  }
+                }
               }
             }
           }
         }
 
-        // Cruciform corridors with vaulted ceilings
+        // Cruciform corridors connecting to entrance gates
         const corridorPaths = [
-          { start: [0, -38], end: [0, -35], width: 4 },
-          { start: [0, 35], end: [0, 38], width: 4 },
-          { start: [-38, 0], end: [-35, 0], width: 4 },
-          { start: [35, 0], end: [38, 0], width: 4 }
+          { start: [0, -34], end: [0, -22], width: 3, direction: 'ns' }, // North corridor
+          { start: [0, 22], end: [0, 34], width: 3, direction: 'ns' },   // South corridor
+          { start: [-34, 0], end: [-22, 0], width: 3, direction: 'ew' }, // West corridor
+          { start: [22, 0], end: [34, 0], width: 3, direction: 'ew' }    // East corridor
         ];
         
         for (let corridor of corridorPaths) {
@@ -1089,11 +1189,11 @@
             const z = start[1] + (end[1] - start[1]) * t;
             
             // Corridor walls and vaulted ceiling
-            for (let y = -14; y < -14 + 10; y += 0.3) {
+            for (let y = -14; y < -14 + 8; y += 0.3) {
               for (let offset = -corridor.width; offset <= corridor.width; offset += 0.3) {
                 // Walls
                 if (Math.abs(offset) > corridor.width - 0.5 || y < -13) {
-                  if (Math.abs(start[0] - end[0]) < 0.1) {
+                  if (corridor.direction === 'ns') {
                     points.push(new THREE.Vector3((x + offset) * scale, y * scale, z * scale));
                   } else {
                     points.push(new THREE.Vector3(x * scale, y * scale, (z + offset) * scale));
@@ -1101,10 +1201,10 @@
                 }
                 
                 // Vaulted ceiling
-                if (y > -6) {
-                  const ceilingCurve = Math.sqrt(1 - Math.pow(offset / corridor.width, 2));
-                  const ceilingY = y * ceilingCurve;
-                  if (Math.abs(start[0] - end[0]) < 0.1) {
+                if (y > -8) {
+                  const ceilingCurve = Math.sqrt(Math.max(0, 1 - Math.pow(offset / corridor.width, 2)));
+                  const ceilingY = y + ceilingCurve * 2;
+                  if (corridor.direction === 'ns') {
                     points.push(new THREE.Vector3((x + offset) * scale, ceilingY * scale, z * scale));
                   } else {
                     points.push(new THREE.Vector3(x * scale, ceilingY * scale, (z + offset) * scale));
@@ -1115,51 +1215,103 @@
           }
         }
 
-        // Elaborate Naga balustrades with 7 heads
+        // Iconic Naga balustrades - the most distinctive feature of Angkor Wat
         for (let side = 0; side < 4; side++) {
-          const angle = (side / 4) * Math.PI * 2;
-          const startR = 38;
-          const endR = 45;
+          const angle = (side / 4) * Math.PI * 2 + Math.PI/4; // 45-degree offset for corners
+          const startR = 40;
+          const endR = 50;
           
-          // Main serpent body
-          for (let t = 0; t <= 1; t += 0.01) {
+          // Naga body with authentic undulating form
+          for (let t = 0; t <= 1; t += 0.008) {
             const r = startR + (endR - startR) * t;
             const x = Math.cos(angle) * r;
             const z = Math.sin(angle) * r;
-            const y = -16 + Math.sin(t * Math.PI * 6) * 1.5;
+            // Classic Khmer Naga undulation
+            const y = -17 + Math.sin(t * Math.PI * 4) * 2 + t * 2;
             
-            // Thicker body with scales
-            const bodyThickness = 1.5 - t * 0.5;
-            for (let i = 0; i < 20; i++) {
-              const scaleAngle = (i / 20) * Math.PI * 2;
-              const scaleOffset = Math.sin(scaleAngle + t * 20) * 0.2;
-              const offsetX = Math.cos(angle + Math.PI/2) * Math.cos(scaleAngle) * (bodyThickness + scaleOffset);
-              const offsetZ = Math.sin(angle + Math.PI/2) * Math.cos(scaleAngle) * (bodyThickness + scaleOffset);
-              const offsetY = Math.sin(scaleAngle) * bodyThickness;
+            // Segmented body with pronounced scales
+            const bodyThickness = 2 - t * 0.8;
+            const segments = 24;
+            for (let i = 0; i < segments; i++) {
+              const segAngle = (i / segments) * Math.PI * 2;
+              // Diamond-shaped cross-section typical of Khmer nagas
+              const diamondShape = Math.abs(Math.sin(segAngle * 2)) * 0.3;
+              const segmentR = bodyThickness + diamondShape;
+              
+              // Scale pattern
+              const scalePattern = Math.sin(t * 50 + segAngle * 4) * 0.1;
+              
+              const offsetX = Math.cos(angle + Math.PI/2) * Math.cos(segAngle) * (segmentR + scalePattern);
+              const offsetZ = Math.sin(angle + Math.PI/2) * Math.cos(segAngle) * (segmentR + scalePattern);
+              const offsetY = Math.sin(segAngle) * segmentR;
+              
               points.push(new THREE.Vector3(
                 (x + offsetX) * scale,
                 (y + offsetY) * scale,
                 (z + offsetZ) * scale
               ));
             }
+            
+            // Dorsal ridge
+            for (let ridge = 0; ridge < 0.5; ridge += 0.1) {
+              points.push(new THREE.Vector3(
+                x * scale,
+                (y + bodyThickness + ridge) * scale,
+                z * scale
+              ));
+            }
           }
           
-          // Seven-headed hood at the end
+          // Magnificent seven-headed hood (spread in fan formation)
           const hoodX = Math.cos(angle) * endR;
           const hoodZ = Math.sin(angle) * endR;
+          const hoodBaseY = -15;
+          
+          // Hood necks spreading outward
           for (let head = -3; head <= 3; head++) {
-            const headOffset = head * 2;
-            const headX = hoodX + Math.cos(angle + Math.PI/2) * headOffset;
-            const headZ = hoodZ + Math.sin(angle + Math.PI/2) * headOffset;
+            const spreadAngle = (head / 6) * Math.PI/3; // Fan out 60 degrees
+            const neckLength = 8 - Math.abs(head) * 0.5;
             
-            // Each head
-            for (let h = 0; h < 5; h += 0.2) {
-              for (let a = 0; a < Math.PI * 2; a += 0.2) {
-                const headR = 1.5 - h * 0.2;
-                const x = headX + Math.cos(a) * headR;
-                const z = headZ + Math.sin(a) * headR;
-                const y = -14 + h + Math.abs(head) * 0.5;
+            // Each neck
+            for (let n = 0; n < neckLength; n += 0.2) {
+              const neckT = n / neckLength;
+              const neckR = 1.2 - neckT * 0.3;
+              const neckX = hoodX + Math.cos(angle + Math.PI/2 + spreadAngle) * n * 0.8;
+              const neckZ = hoodZ + Math.sin(angle + Math.PI/2 + spreadAngle) * n * 0.8;
+              const neckY = hoodBaseY + n * 0.7 + Math.sin(neckT * Math.PI) * 1;
+              
+              for (let a = 0; a < Math.PI * 2; a += 0.15) {
+                const x = neckX + Math.cos(a) * neckR;
+                const z = neckZ + Math.sin(a) * neckR;
+                points.push(new THREE.Vector3(x * scale, neckY * scale, z * scale));
+              }
+            }
+            
+            // Hood cobra head
+            const headX = hoodX + Math.cos(angle + Math.PI/2 + spreadAngle) * neckLength * 0.8;
+            const headZ = hoodZ + Math.sin(angle + Math.PI/2 + spreadAngle) * neckLength * 0.8;
+            const headY = hoodBaseY + neckLength * 0.7 + 1;
+            
+            // Flared cobra hood
+            for (let h = -2; h <= 2; h += 0.2) {
+              for (let w = -1.5; w <= 1.5; w += 0.2) {
+                const hoodFlare = 1 - Math.abs(h) / 2;
+                const x = headX + Math.cos(angle + spreadAngle) * h + Math.cos(angle + Math.PI/2 + spreadAngle) * w * hoodFlare;
+                const z = headZ + Math.sin(angle + spreadAngle) * h + Math.sin(angle + Math.PI/2 + spreadAngle) * w * hoodFlare;
+                const y = headY + Math.abs(w) * 0.3;
                 points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+              }
+            }
+            
+            // Crown on central head
+            if (head === 0) {
+              for (let c = 0; c < 2; c += 0.1) {
+                const crownR = 0.5 - c * 0.2;
+                for (let a = 0; a < Math.PI * 2; a += 0.3) {
+                  const x = headX + Math.cos(a) * crownR;
+                  const z = headZ + Math.sin(a) * crownR;
+                  points.push(new THREE.Vector3(x * scale, (headY + 2 + c) * scale, z * scale));
+                }
               }
             }
           }
@@ -1188,26 +1340,152 @@
           createTower(lib.x, -6, lib.z, 5, 8, false);
         }
 
-        // Bas-relief details on walls (simulated with dense points)
-        for (let i = 0; i < 1000; i++) {
-          const wallAngle = Math.random() * Math.PI * 2;
-          const wallR = 35 + Math.random() * 3;
-          const wallX = Math.cos(wallAngle) * wallR;
-          const wallZ = Math.sin(wallAngle) * wallR;
-          const wallY = -14 + Math.random() * 8;
-          points.push(new THREE.Vector3(wallX * scale, wallY * scale, wallZ * scale));
+        // Bas-relief panels depicting scenes from Ramayana and Mahabharata
+        const reliefPanels = [
+          { start: 0, end: Math.PI/2, scene: "battle" },
+          { start: Math.PI/2, end: Math.PI, scene: "procession" },
+          { start: Math.PI, end: 3*Math.PI/2, scene: "deities" },
+          { start: 3*Math.PI/2, end: 2*Math.PI, scene: "apsaras" }
+        ];
+        
+        for (let panel of reliefPanels) {
+          for (let a = panel.start; a < panel.end; a += 0.02) {
+            const wallR = 36.5;
+            const baseX = Math.cos(a) * wallR;
+            const baseZ = Math.sin(a) * wallR;
+            
+            // Create different patterns for different scenes
+            for (let y = -12; y < -4; y += 0.3) {
+              for (let depth = 0; depth < 0.5; depth += 0.1) {
+                let pattern = 0;
+                if (panel.scene === "battle") {
+                  pattern = Math.sin(a * 20) * Math.sin(y * 2) * 0.3;
+                } else if (panel.scene === "procession") {
+                  pattern = Math.sin(a * 30 + y * 0.5) * 0.2;
+                } else if (panel.scene === "deities") {
+                  pattern = Math.abs(Math.sin(a * 15) * Math.cos(y)) * 0.3;
+                } else if (panel.scene === "apsaras") {
+                  pattern = Math.sin(a * 25) * Math.cos(y * 3) * 0.25;
+                }
+                
+                const x = baseX - Math.cos(a) * (depth + pattern);
+                const z = baseZ - Math.sin(a) * (depth + pattern);
+                points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+              }
+            }
+          }
         }
 
-        // Stairs on all four sides
+        // Iconic steep stairs on all four sides
         for (let side = 0; side < 4; side++) {
           const stairAngle = (side / 4) * Math.PI * 2;
-          for (let step = 0; step < 15; step++) {
-            const stepR = 38 + step * 0.5;
-            const stepY = -16 + step * 0.3;
-            for (let w = -3; w <= 3; w += 0.5) {
+          
+          // Main ceremonial stairway (very steep, as in real Angkor Wat)
+          for (let step = 0; step < 20; step++) {
+            const stepR = 38 + step * 0.4;
+            const stepY = -17 + step * 0.6; // Steep rise
+            
+            // Central stairs are wider
+            for (let w = -4; w <= 4; w += 0.3) {
               const x = Math.cos(stairAngle) * stepR + Math.cos(stairAngle + Math.PI/2) * w;
               const z = Math.sin(stairAngle) * stepR + Math.sin(stairAngle + Math.PI/2) * w;
+              
+              // Step surface
               points.push(new THREE.Vector3(x * scale, stepY * scale, z * scale));
+              
+              // Step riser
+              if (step > 0) {
+                for (let rh = -0.6; rh < 0; rh += 0.1) {
+                  points.push(new THREE.Vector3(x * scale, (stepY + rh) * scale, z * scale));
+                }
+              }
+            }
+            
+            // Lion guardians at base of stairs
+            if (step === 0) {
+              for (let lionSide = -1; lionSide <= 1; lionSide += 2) {
+                const lionX = Math.cos(stairAngle) * stepR + Math.cos(stairAngle + Math.PI/2) * lionSide * 5;
+                const lionZ = Math.sin(stairAngle) * stepR + Math.sin(stairAngle + Math.PI/2) * lionSide * 5;
+                
+                // Lion body (simplified)
+                for (let lb = 0; lb < 50; lb++) {
+                  const lx = lionX + (Math.random() - 0.5) * 2;
+                  const ly = stepY + Math.random() * 3;
+                  const lz = lionZ + (Math.random() - 0.5) * 2;
+                  points.push(new THREE.Vector3(lx * scale, ly * scale, lz * scale));
+                }
+              }
+            }
+          }
+        }
+        
+        // Long causeway approaching from the west
+        const causewayLength = 30;
+        const causewayWidth = 6;
+        for (let d = 0; d < causewayLength; d += 0.5) {
+          const cx = -(38 + d);
+          for (let w = -causewayWidth/2; w <= causewayWidth/2; w += 0.3) {
+            // Causeway surface
+            const cy = -17.5 + Math.sin(d * 0.1) * 0.1; // Slight undulation
+            points.push(new THREE.Vector3(cx * scale, cy * scale, w * scale));
+            
+            // Raised edges
+            if (Math.abs(w) > causewayWidth/2 - 0.5) {
+              for (let h = 0; h < 0.5; h += 0.1) {
+                points.push(new THREE.Vector3(cx * scale, (cy + h) * scale, w * scale));
+              }
+            }
+          }
+          
+          // Small nagas along causeway edges
+          if (d % 5 === 0) {
+            for (let side = -1; side <= 1; side += 2) {
+              const nagaY = -17;
+              const nagaZ = side * (causewayWidth/2 + 1);
+              for (let n = 0; n < 20; n++) {
+                const nx = cx + (Math.random() - 0.5) * 1;
+                const ny = nagaY + Math.random() * 1.5;
+                const nz = nagaZ + (Math.random() - 0.5) * 0.5;
+                points.push(new THREE.Vector3(nx * scale, ny * scale, nz * scale));
+              }
+            }
+          }
+        }
+        
+        // Gopura (entrance pavilions) at cardinal points
+        const gopuras = [
+          { x: -38, z: 0, orientation: 0 },
+          { x: 38, z: 0, orientation: Math.PI },
+          { x: 0, z: -38, orientation: Math.PI/2 },
+          { x: 0, z: 38, orientation: -Math.PI/2 }
+        ];
+        
+        for (let gopura of gopuras) {
+          // Gopura entrance structure (without tower to maintain 5-tower count)
+          for (let gx = -4; gx <= 4; gx += 0.3) {
+            for (let gz = -2.5; gz <= 2.5; gz += 0.3) {
+              const rotX = gopura.x + Math.cos(gopura.orientation) * gx - Math.sin(gopura.orientation) * gz;
+              const rotZ = gopura.z + Math.sin(gopura.orientation) * gx + Math.cos(gopura.orientation) * gz;
+              
+              for (let gy = -14; gy < -14 + 8; gy += 0.3) {
+                // Create entrance gateway with opening in center
+                const isWall = Math.abs(gx) > 3 || Math.abs(gz) > 1.5 || 
+                              (Math.abs(gx) > 1 && (gy < -13 || gy > -8));
+                if (isWall) {
+                  points.push(new THREE.Vector3(rotX * scale, gy * scale, rotZ * scale));
+                }
+              }
+              
+              // Decorative roof structure (not a full tower)
+              if (Math.abs(gx) < 4 && Math.abs(gz) < 2.5) {
+                for (let roofLevel = 0; roofLevel < 3; roofLevel++) {
+                  const roofY = -6 + roofLevel * 0.5;
+                  const roofInset = roofLevel * 0.5;
+                  if (Math.abs(gx) < 4 - roofInset && Math.abs(gz) < 2.5 - roofInset) {
+                    points.push(new THREE.Vector3(rotX * scale, roofY * scale, rotZ * scale));
+                  }
+                }
+              }
             }
           }
         }
