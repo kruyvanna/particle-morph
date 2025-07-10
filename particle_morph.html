@@ -222,6 +222,7 @@
       <div class="button" data-shape="tree">TREE</div>
       <div class="button" data-shape="angkorwat">ANGKOR WAT</div>
       <div class="button" data-shape="satellite">SATELLITE</div>
+      <div class="button" data-shape="drone">DRONE</div>
     </div>
 
     <div id="controls">
@@ -600,6 +601,9 @@
             break;
           case "satellite":
             generateSatellite();
+            break;
+          case "drone":
+            generateDrone();
             break;
         }
 
@@ -1096,6 +1100,412 @@
               const y = tracker.y;
               const z = tracker.z + h + Math.sin(angle) * sensorRadius;
               points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+            }
+          }
+        }
+
+        distributePointsToParticles(points);
+      }
+
+      function generateDrone() {
+        const points = [];
+        const scale = 1.2;
+
+        // Central body/frame - main hub
+        const bodyRadius = 4;
+        const bodyHeight = 2;
+        
+        // Main central body (cylindrical/rounded)
+        for (let y = -bodyHeight; y <= bodyHeight; y += 0.2) {
+          for (let angle = 0; angle < Math.PI * 2; angle += 0.05) {
+            for (let r = bodyRadius - 1; r <= bodyRadius; r += 0.2) {
+              const x = Math.cos(angle) * r;
+              const z = Math.sin(angle) * r;
+              points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+            }
+          }
+        }
+        
+        // Inner body structure
+        for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
+          for (let r = 0; r < bodyRadius - 1; r += 0.5) {
+            const x = Math.cos(angle) * r;
+            const z = Math.sin(angle) * r;
+            points.push(new THREE.Vector3(x * scale, 0, z * scale));
+          }
+        }
+
+        // Drone arms - 4 extending from center
+        const armLength = 12;
+        const armThickness = 0.8;
+        const armAngles = [0, Math.PI/2, Math.PI, 3*Math.PI/2];
+        
+        for (let armIndex = 0; armIndex < 4; armIndex++) {
+          const armAngle = armAngles[armIndex];
+          
+          // Main arm structure
+          for (let t = 0; t <= 1; t += 0.02) {
+            const armR = bodyRadius + t * armLength;
+            const armX = Math.cos(armAngle) * armR;
+            const armZ = Math.sin(armAngle) * armR;
+            
+            // Arm cross-section (rectangular beam)
+            for (let thickness = -armThickness; thickness <= armThickness; thickness += 0.2) {
+              for (let width = -armThickness; width <= armThickness; width += 0.2) {
+                const perpAngle = armAngle + Math.PI/2;
+                const offsetX = Math.cos(perpAngle) * thickness;
+                const offsetZ = Math.sin(perpAngle) * thickness;
+                
+                points.push(new THREE.Vector3(
+                  (armX + offsetX) * scale,
+                  width * scale,
+                  (armZ + offsetZ) * scale
+                ));
+              }
+            }
+            
+            // Arm reinforcement struts
+            if (t > 0.3 && t % 0.2 < 0.05) {
+              for (let strut = -1; strut <= 1; strut += 0.2) {
+                points.push(new THREE.Vector3(
+                  armX * scale,
+                  (strut * 2) * scale,
+                  armZ * scale
+                ));
+              }
+            }
+          }
+        }
+
+        // Motors and propellers at arm ends
+        const motorRadius = 1.5;
+        const motorHeight = 2;
+        const propellerRadius = 6;
+        const propellerThickness = 0.15;
+        
+        for (let motorIndex = 0; motorIndex < 4; motorIndex++) {
+          const motorAngle = armAngles[motorIndex];
+          const motorDistance = bodyRadius + armLength;
+          const motorX = Math.cos(motorAngle) * motorDistance;
+          const motorZ = Math.sin(motorAngle) * motorDistance;
+          
+          // Motor housing
+          for (let y = -motorHeight; y <= motorHeight; y += 0.2) {
+            for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
+              for (let r = motorRadius - 0.3; r <= motorRadius; r += 0.2) {
+                const x = motorX + Math.cos(angle) * r;
+                const z = motorZ + Math.sin(angle) * r;
+                points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+              }
+            }
+          }
+          
+          // Motor shaft
+          for (let shaft = 0; shaft < 1; shaft += 0.1) {
+            for (let angle = 0; angle < Math.PI * 2; angle += 0.2) {
+              const shaftR = 0.3;
+              const x = motorX + Math.cos(angle) * shaftR;
+              const z = motorZ + Math.sin(angle) * shaftR;
+              const y = motorHeight + shaft;
+              points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+            }
+          }
+          
+          // Propellers (2 blades each)
+          for (let blade = 0; blade < 2; blade++) {
+            const bladeAngle = motorAngle + blade * Math.PI;
+            
+            // Blade shape (tapered from hub to tip)
+            for (let t = 0; t <= 1; t += 0.02) {
+              const bladeR = t * propellerRadius;
+              const bladeWidth = (1 - t * 0.7) * 0.8;
+              const twist = t * Math.PI / 6; // Blade twist
+              
+              for (let w = -bladeWidth; w <= bladeWidth; w += 0.1) {
+                for (let thick = -propellerThickness; thick <= propellerThickness; thick += 0.1) {
+                  const bladeX = motorX + Math.cos(bladeAngle + twist) * bladeR + Math.cos(bladeAngle + Math.PI/2) * w;
+                  const bladeZ = motorZ + Math.sin(bladeAngle + twist) * bladeR + Math.sin(bladeAngle + Math.PI/2) * w;
+                  const bladeY = motorHeight + 1 + thick;
+                  points.push(new THREE.Vector3(bladeX * scale, bladeY * scale, bladeZ * scale));
+                }
+              }
+            }
+          }
+          
+          // Propeller hub
+          for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
+            for (let r = 0; r <= 1; r += 0.2) {
+              const x = motorX + Math.cos(angle) * r;
+              const z = motorZ + Math.sin(angle) * r;
+              points.push(new THREE.Vector3(x * scale, (motorHeight + 1) * scale, z * scale));
+            }
+          }
+        }
+
+        // Camera gimbal system (front of drone)
+        const gimbalX = 0;
+        const gimbalY = -bodyHeight - 2;
+        const gimbalZ = bodyRadius + 1;
+        
+        // Gimbal frame
+        const gimbalSize = 2;
+        for (let frame = 0; frame < 2; frame++) {
+          const frameAngle = frame * Math.PI;
+          for (let t = 0; t <= 1; t += 0.05) {
+            const frameR = gimbalSize;
+            const x = gimbalX + Math.cos(frameAngle + t * Math.PI * 2) * frameR;
+            const y = gimbalY + Math.sin(t * Math.PI * 2) * frameR;
+            const z = gimbalZ;
+            points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+          }
+        }
+        
+        // Camera body
+        const cameraWidth = 1.5;
+        const cameraHeight = 1;
+        const cameraDepth = 2;
+        
+        for (let x = -cameraWidth; x <= cameraWidth; x += 0.2) {
+          for (let y = -cameraHeight; y <= cameraHeight; y += 0.2) {
+            for (let z = -cameraDepth; z <= cameraDepth; z += 0.2) {
+              const isEdge = Math.abs(x) > cameraWidth - 0.3 || 
+                           Math.abs(y) > cameraHeight - 0.3 || 
+                           Math.abs(z) > cameraDepth - 0.3;
+              if (isEdge) {
+                points.push(new THREE.Vector3(
+                  (gimbalX + x) * scale,
+                  (gimbalY + y) * scale,
+                  (gimbalZ + z) * scale
+                ));
+              }
+            }
+          }
+        }
+        
+        // Camera lens
+        const lensRadius = 0.8;
+        for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
+          for (let r = 0; r <= lensRadius; r += 0.1) {
+            const x = gimbalX + Math.cos(angle) * r;
+            const y = gimbalY + Math.sin(angle) * r;
+            const z = gimbalZ + cameraDepth;
+            points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+          }
+        }
+
+        // Landing gear/legs
+        const legPositions = [
+          { x: 3, z: 3 },
+          { x: -3, z: 3 },
+          { x: 3, z: -3 },
+          { x: -3, z: -3 }
+        ];
+        
+        for (let leg of legPositions) {
+          const legHeight = 4;
+          const legThickness = 0.3;
+          
+          // Main leg strut
+          for (let h = 0; h < legHeight; h += 0.1) {
+            for (let thick = 0; thick < 8; thick++) {
+              const thickAngle = (thick / 8) * Math.PI * 2;
+              const x = leg.x + Math.cos(thickAngle) * legThickness;
+              const z = leg.z + Math.sin(thickAngle) * legThickness;
+              const y = -bodyHeight - h;
+              points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+            }
+          }
+          
+          // Foot pad
+          const footRadius = 1;
+          for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
+            for (let r = 0; r <= footRadius; r += 0.2) {
+              const x = leg.x + Math.cos(angle) * r;
+              const z = leg.z + Math.sin(angle) * r;
+              const y = -bodyHeight - legHeight;
+              points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+            }
+          }
+        }
+
+        // Electronic components on top
+        const components = [
+          { x: 0, y: bodyHeight + 1, z: 0, size: 1.5, type: 'gps' },
+          { x: 2, y: bodyHeight + 0.5, z: 2, size: 0.8, type: 'antenna' },
+          { x: -2, y: bodyHeight + 0.5, z: 2, size: 0.8, type: 'antenna' },
+          { x: 0, y: bodyHeight + 0.3, z: -2, size: 1, type: 'receiver' }
+        ];
+        
+        for (let comp of components) {
+          if (comp.type === 'gps') {
+            // GPS module (cylindrical)
+            const gpsRadius = comp.size;
+            const gpsHeight = 0.8;
+            
+            for (let h = 0; h < gpsHeight; h += 0.1) {
+              for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
+                for (let r = gpsRadius - 0.2; r <= gpsRadius; r += 0.1) {
+                  const x = comp.x + Math.cos(angle) * r;
+                  const z = comp.z + Math.sin(angle) * r;
+                  const y = comp.y + h;
+                  points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+                }
+              }
+            }
+            
+          } else if (comp.type === 'antenna') {
+            // Antenna rod
+            const antennaHeight = 3;
+            for (let h = 0; h < antennaHeight; h += 0.1) {
+              points.push(new THREE.Vector3(
+                comp.x * scale,
+                (comp.y + h) * scale,
+                comp.z * scale
+              ));
+            }
+            
+          } else if (comp.type === 'receiver') {
+            // Receiver box
+            for (let x = -comp.size; x <= comp.size; x += 0.2) {
+              for (let y = 0; y <= comp.size; y += 0.2) {
+                for (let z = -comp.size; z <= comp.size; z += 0.2) {
+                  const isEdge = Math.abs(x) > comp.size - 0.2 || 
+                               y > comp.size - 0.2 || 
+                               Math.abs(z) > comp.size - 0.2;
+                  if (isEdge) {
+                    points.push(new THREE.Vector3(
+                      (comp.x + x) * scale,
+                      (comp.y + y) * scale,
+                      (comp.z + z) * scale
+                    ));
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // Battery compartment (bottom)
+        const batteryWidth = 3;
+        const batteryHeight = 1;
+        const batteryDepth = 6;
+        const batteryY = -bodyHeight - 1;
+        
+        for (let x = -batteryWidth; x <= batteryWidth; x += 0.3) {
+          for (let y = -batteryHeight; y <= 0; y += 0.2) {
+            for (let z = -batteryDepth; z <= batteryDepth; z += 0.3) {
+              const isWall = Math.abs(x) > batteryWidth - 0.3 || 
+                           y < -batteryHeight + 0.2 || 
+                           Math.abs(z) > batteryDepth - 0.3;
+              if (isWall) {
+                points.push(new THREE.Vector3(
+                  x * scale,
+                  (batteryY + y) * scale,
+                  z * scale
+                ));
+              }
+            }
+          }
+        }
+
+        // LED lights (navigation/status)
+        const ledPositions = [
+          { x: bodyRadius, y: 0, z: 0, color: 'red' },
+          { x: -bodyRadius, y: 0, z: 0, color: 'green' },
+          { x: 0, y: 0, z: bodyRadius, color: 'white' },
+          { x: 0, y: 0, z: -bodyRadius, color: 'white' }
+        ];
+        
+        for (let led of ledPositions) {
+          // Small LED housings
+          const ledSize = 0.3;
+          for (let x = -ledSize; x <= ledSize; x += 0.1) {
+            for (let y = -ledSize; y <= ledSize; y += 0.1) {
+              for (let z = -ledSize; z <= ledSize; z += 0.1) {
+                points.push(new THREE.Vector3(
+                  (led.x + x) * scale,
+                  (led.y + y) * scale,
+                  (led.z + z) * scale
+                ));
+              }
+            }
+          }
+        }
+
+        // Wiring and cables
+        const wireRoutes = [
+          { start: [0, 0, 0], end: [bodyRadius + armLength, 0, 0] },
+          { start: [0, 0, 0], end: [0, 0, bodyRadius + armLength] },
+          { start: [0, 0, 0], end: [-bodyRadius - armLength, 0, 0] },
+          { start: [0, 0, 0], end: [0, 0, -bodyRadius - armLength] },
+          { start: [0, bodyHeight, 0], end: [0, gimbalY, gimbalZ] }
+        ];
+        
+        for (let wire of wireRoutes) {
+          for (let t = 0; t <= 1; t += 0.05) {
+            const x = wire.start[0] + (wire.end[0] - wire.start[0]) * t;
+            const y = wire.start[1] + (wire.end[1] - wire.start[1]) * t;
+            const z = wire.start[2] + (wire.end[2] - wire.start[2]) * t;
+            
+            // Main wire
+            points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+            
+            // Wire bundle thickness
+            for (let bundle = 0; bundle < 3; bundle++) {
+              const offset = 0.1;
+              points.push(new THREE.Vector3(
+                x * scale + (Math.random() - 0.5) * offset,
+                y * scale + (Math.random() - 0.5) * offset,
+                z * scale + (Math.random() - 0.5) * offset
+              ));
+            }
+          }
+        }
+
+        // Protective motor guards (optional racing-style)
+        for (let guardIndex = 0; guardIndex < 4; guardIndex++) {
+          const guardAngle = armAngles[guardIndex];
+          const guardDistance = bodyRadius + armLength;
+          const guardX = Math.cos(guardAngle) * guardDistance;
+          const guardZ = Math.sin(guardAngle) * guardDistance;
+          const guardRadius = propellerRadius + 1;
+          
+          // Ring guard around propeller
+          for (let angle = 0; angle < Math.PI * 2; angle += 0.05) {
+            for (let thickness = -0.3; thickness <= 0.3; thickness += 0.1) {
+              const x = guardX + Math.cos(angle) * guardRadius;
+              const z = guardZ + Math.sin(angle) * guardRadius;
+              const y = motorHeight + thickness;
+              points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+            }
+          }
+        }
+
+        // Flight controller/IMU sensors
+        const fcX = 0;
+        const fcY = 0;
+        const fcZ = 0;
+        const fcSize = 2;
+        
+        // Flight controller board
+        for (let x = -fcSize; x <= fcSize; x += 0.2) {
+          for (let z = -fcSize; z <= fcSize; z += 0.2) {
+            // PCB surface
+            points.push(new THREE.Vector3(
+              (fcX + x) * scale,
+              (fcY + 0.2) * scale,
+              (fcZ + z) * scale
+            ));
+            
+            // Components on board
+            if (x % 0.8 < 0.2 && z % 0.8 < 0.2) {
+              for (let comp = 0; comp < 3; comp++) {
+                points.push(new THREE.Vector3(
+                  (fcX + x) * scale,
+                  (fcY + 0.2 + comp * 0.1) * scale,
+                  (fcZ + z) * scale
+                ));
+              }
             }
           }
         }
