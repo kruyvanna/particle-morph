@@ -2054,8 +2054,8 @@
           }
         }
 
-        // Main central tower - the tallest
-        createTower(0, -14, 0, 16, 50, true);
+        // Main central tower - the tallest (reduced height)
+        createTower(0, -14, 0, 16, 30, true);
 
         // Four corner towers in perfect quincunx pattern (forming a square)
         const cornerPositions = [
@@ -2066,7 +2066,7 @@
         ];
 
         for (let pos of cornerPositions) {
-          createTower(pos[0], pos[1], pos[2], 12, 35);
+          createTower(pos[0], pos[1], pos[2], 12, 20);
         }
 
         // Three concentric rectangular enclosures (as seen in aerial photos)
