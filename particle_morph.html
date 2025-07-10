@@ -356,7 +356,7 @@
           0.1,
           1000
         );
-        camera.position.set(40, 30, 60);
+        camera.position.set(30, 8, 0);
         camera.lookAt(0, 0, 0);
 
         // Renderer setup
@@ -1010,8 +1010,8 @@
         const coneTopRadius = 0.5;
         const coneBottomRadius = 6;
         const conePosition = { x: 0, y: -busHeight / 2 - 2, z: 0 };
-        const coneSegments = 20;
-        const coneRings = 15;
+        const coneSegments = 40; // Doubled for more density
+        const coneRings = 30; // Doubled for more density
 
         for (let ring = 0; ring < coneRings; ring++) {
           const t = ring / (coneRings - 1);
@@ -1024,29 +1024,60 @@
             const z = conePosition.z + Math.sin(angle) * radius;
             points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
 
-            // Add some inner cone structure for visual depth
-            if (ring % 3 === 0) {
-              const innerRadius = radius * 0.8;
-              const innerX = conePosition.x + Math.cos(angle) * innerRadius;
-              const innerZ = conePosition.z + Math.sin(angle) * innerRadius;
-              points.push(
-                new THREE.Vector3(innerX * scale, y * scale, innerZ * scale)
-              );
-            }
+            // Add multiple inner cone layers for more intensity
+            const innerRadius1 = radius * 0.8;
+            const innerRadius2 = radius * 0.6;
+            const innerRadius3 = radius * 0.4;
+
+            const innerX1 = conePosition.x + Math.cos(angle) * innerRadius1;
+            const innerZ1 = conePosition.z + Math.sin(angle) * innerRadius1;
+            points.push(
+              new THREE.Vector3(innerX1 * scale, y * scale, innerZ1 * scale)
+            );
+
+            const innerX2 = conePosition.x + Math.cos(angle) * innerRadius2;
+            const innerZ2 = conePosition.z + Math.sin(angle) * innerRadius2;
+            points.push(
+              new THREE.Vector3(innerX2 * scale, y * scale, innerZ2 * scale)
+            );
+
+            const innerX3 = conePosition.x + Math.cos(angle) * innerRadius3;
+            const innerZ3 = conePosition.z + Math.sin(angle) * innerRadius3;
+            points.push(
+              new THREE.Vector3(innerX3 * scale, y * scale, innerZ3 * scale)
+            );
           }
         }
 
-        // Cone beam pattern lines (radiating from center)
-        for (let beam = 0; beam < 8; beam++) {
-          const beamAngle = (beam / 8) * Math.PI * 2;
-          for (let step = 0; step < 10; step++) {
-            const t = step / 9;
+        // Dense cone beam pattern lines (radiating from center)
+        for (let beam = 0; beam < 24; beam++) {
+          // Tripled beam count
+          const beamAngle = (beam / 24) * Math.PI * 2;
+          for (let step = 0; step < 20; step++) {
+            // Doubled step count
+            const t = step / 19;
             const y = conePosition.y - t * coneHeight;
             const radius =
               coneTopRadius + (coneBottomRadius - coneTopRadius) * t;
             const x = conePosition.x + Math.cos(beamAngle) * radius;
             const z = conePosition.z + Math.sin(beamAngle) * radius;
             points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+          }
+        }
+
+        // Fill cone interior with particles for maximum intensity
+        for (let ring = 0; ring < coneRings; ring += 2) {
+          const t = ring / (coneRings - 1);
+          const y = conePosition.y - t * coneHeight;
+          const maxRadius =
+            coneTopRadius + (coneBottomRadius - coneTopRadius) * t;
+
+          for (let r = 0; r < maxRadius; r += 0.3) {
+            for (let angle = 0; angle < Math.PI * 2; angle += 0.2) {
+              const x = conePosition.x + Math.cos(angle) * r;
+              const z = conePosition.z + Math.sin(angle) * r;
+              points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+            }
           }
         }
 
