@@ -2786,7 +2786,7 @@
       function updateMorphing(deltaTime) {
         if (!isMorphing) return;
 
-        morphProgress += deltaTime * 0.8; // Morph speed
+        morphProgress += deltaTime * 0.3; // Morph speed - slower transition
         if (morphProgress >= 1.0) {
           morphProgress = 1.0;
           isMorphing = false;
