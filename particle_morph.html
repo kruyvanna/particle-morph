@@ -221,6 +221,7 @@
       <div class="button" data-shape="face">HUMAN</div>
       <div class="button" data-shape="tree">TREE</div>
       <div class="button" data-shape="angkorwat">ANGKOR WAT</div>
+      <div class="button" data-shape="compass">COMPASS</div>
     </div>
 
     <div id="controls">
@@ -597,6 +598,9 @@
           case "angkorwat":
             generateAngkorWat();
             break;
+          case "compass":
+            generateCompass();
+            break;
         }
 
         morphProgress = 0;
@@ -755,6 +759,120 @@
             const z = cheek[2] + r * Math.cos(phi) * scale;
             points.push(new THREE.Vector3(x, y, z));
           }
+        }
+
+        distributePointsToParticles(points);
+      }
+
+      function generateCompass() {
+        const points = [];
+        const scale = 1.2;
+
+        // Main compass circle/ring
+        const outerRadius = 20;
+        const innerRadius = 18;
+        const ringThickness = 2;
+        
+        // Outer ring
+        for (let angle = 0; angle < Math.PI * 2; angle += 0.02) {
+          for (let r = innerRadius; r <= outerRadius; r += 0.5) {
+            const x = Math.cos(angle) * r * scale;
+            const z = Math.sin(angle) * r * scale;
+            const y = (Math.random() - 0.5) * ringThickness;
+            points.push(new THREE.Vector3(x, y, z));
+          }
+        }
+
+        // Cardinal points (N, S, E, W) - thicker markers
+        const cardinals = [
+          { angle: 0, label: 'E' },
+          { angle: Math.PI / 2, label: 'N' },
+          { angle: Math.PI, label: 'W' },
+          { angle: 3 * Math.PI / 2, label: 'S' }
+        ];
+
+        for (let cardinal of cardinals) {
+          // Create thicker markers at cardinal points
+          for (let r = innerRadius - 3; r <= outerRadius + 3; r += 0.3) {
+            for (let offset = -1; offset <= 1; offset += 0.2) {
+              const x = Math.cos(cardinal.angle + offset * 0.02) * r * scale;
+              const z = Math.sin(cardinal.angle + offset * 0.02) * r * scale;
+              const y = (Math.random() - 0.5) * 3;
+              points.push(new THREE.Vector3(x, y, z));
+            }
+          }
+        }
+
+        // Intermediate markers (NE, NW, SE, SW)
+        for (let i = 0; i < 4; i++) {
+          const angle = (Math.PI / 4) + (i * Math.PI / 2);
+          for (let r = innerRadius; r <= outerRadius + 1; r += 0.4) {
+            const x = Math.cos(angle) * r * scale;
+            const z = Math.sin(angle) * r * scale;
+            const y = (Math.random() - 0.5) * 2;
+            points.push(new THREE.Vector3(x, y, z));
+          }
+        }
+
+        // Compass needle/pointer (pointing North)
+        // North pointer (red/primary)
+        const needleLength = 15;
+        const needleWidth = 3;
+        
+        // North arrow
+        for (let t = 0; t <= 1; t += 0.02) {
+          const length = needleLength * (1 - t * 0.3);
+          for (let w = -needleWidth; w <= needleWidth; w += 0.5) {
+            const x = w * (1 - t) * scale;
+            const z = t * length * scale;
+            const y = (Math.random() - 0.5) * 2;
+            points.push(new THREE.Vector3(x, y, z));
+          }
+        }
+
+        // South arrow (smaller)
+        for (let t = 0; t <= 1; t += 0.03) {
+          const length = needleLength * 0.7 * (1 - t * 0.3);
+          for (let w = -needleWidth * 0.7; w <= needleWidth * 0.7; w += 0.5) {
+            const x = w * (1 - t) * scale;
+            const z = -t * length * scale;
+            const y = (Math.random() - 0.5) * 2;
+            points.push(new THREE.Vector3(x, y, z));
+          }
+        }
+
+        // Center pivot circle
+        const pivotRadius = 3;
+        for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
+          for (let r = 0; r <= pivotRadius; r += 0.5) {
+            const x = Math.cos(angle) * r * scale;
+            const z = Math.sin(angle) * r * scale;
+            const y = (Math.random() - 0.5) * 2;
+            points.push(new THREE.Vector3(x, y, z));
+          }
+        }
+
+        // Degree markings around the edge
+        for (let deg = 0; deg < 360; deg += 10) {
+          const angle = (deg * Math.PI) / 180;
+          const markLength = (deg % 30 === 0) ? 2 : 1;
+          
+          for (let r = outerRadius; r <= outerRadius + markLength; r += 0.3) {
+            const x = Math.cos(angle) * r * scale;
+            const z = Math.sin(angle) * r * scale;
+            const y = (Math.random() - 0.5) * 1.5;
+            points.push(new THREE.Vector3(x, y, z));
+          }
+        }
+
+        // Add some decorative elements - small dots between major marks
+        for (let i = 0; i < 100; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const r = innerRadius - 1 + Math.random() * 2;
+          const x = Math.cos(angle) * r * scale;
+          const z = Math.sin(angle) * r * scale;
+          const y = (Math.random() - 0.5) * 1;
+          points.push(new THREE.Vector3(x, y, z));
         }
 
         distributePointsToParticles(points);
