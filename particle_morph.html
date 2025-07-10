@@ -216,7 +216,6 @@
     <div id="container"></div>
     <div id="ui">
       <div id="title">PARTICLE MORPH</div>
-      <div class="button" data-shape="sphere">SPHERE</div>
       <div class="button" data-shape="angkorwat">ANGKOR WAT</div>
       <div class="button" data-shape="naga">NAGA</div>
       <div class="button" data-shape="modern-satellite">MODERN SAT</div>
@@ -336,10 +335,12 @@
         initEventListeners();
 
         // Set initial shape
-        const initialButton = document.querySelector('[data-shape="sphere"]');
+        const initialButton = document.querySelector(
+          '[data-shape="modern-satellite"]'
+        );
         initialButton.classList.add("active");
         selectedButton = initialButton;
-        morphToShape("sphere");
+        morphToShape("modern-satellite");
       }
 
       function initScene() {
@@ -582,9 +583,6 @@
 
         // Generate target positions based on shape
         switch (shape) {
-          case "sphere":
-            generateSphere();
-            break;
           case "angkorwat":
             generateAngkorWat();
             break;
@@ -601,22 +599,6 @@
 
         morphProgress = 0;
         isMorphing = true;
-      }
-
-      function generateSphere() {
-        const radius = 20;
-        for (let i = 0; i < PARTICLE_COUNT; i++) {
-          const i3 = i * 3;
-
-          // Fibonacci sphere for even distribution
-          const y = 1 - (i / (PARTICLE_COUNT - 1)) * 2;
-          const radiusAtY = Math.sqrt(1 - y * y);
-          const theta = ((i + 1) % PARTICLE_COUNT) * 2.399963229728653;
-
-          targetPositions[i3] = radiusAtY * Math.cos(theta) * radius;
-          targetPositions[i3 + 1] = y * radius;
-          targetPositions[i3 + 2] = radiusAtY * Math.sin(theta) * radius;
-        }
       }
 
       function generateModernSatellite() {
