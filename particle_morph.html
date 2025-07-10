@@ -1005,6 +1005,51 @@
           }
         }
 
+        // Down beaming cone (communication beam)
+        const coneHeight = 8;
+        const coneTopRadius = 0.5;
+        const coneBottomRadius = 6;
+        const conePosition = { x: 0, y: -busHeight / 2 - 2, z: 0 };
+        const coneSegments = 20;
+        const coneRings = 15;
+
+        for (let ring = 0; ring < coneRings; ring++) {
+          const t = ring / (coneRings - 1);
+          const y = conePosition.y - t * coneHeight;
+          const radius = coneTopRadius + (coneBottomRadius - coneTopRadius) * t;
+
+          for (let seg = 0; seg < coneSegments; seg++) {
+            const angle = (seg / coneSegments) * Math.PI * 2;
+            const x = conePosition.x + Math.cos(angle) * radius;
+            const z = conePosition.z + Math.sin(angle) * radius;
+            points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+
+            // Add some inner cone structure for visual depth
+            if (ring % 3 === 0) {
+              const innerRadius = radius * 0.8;
+              const innerX = conePosition.x + Math.cos(angle) * innerRadius;
+              const innerZ = conePosition.z + Math.sin(angle) * innerRadius;
+              points.push(
+                new THREE.Vector3(innerX * scale, y * scale, innerZ * scale)
+              );
+            }
+          }
+        }
+
+        // Cone beam pattern lines (radiating from center)
+        for (let beam = 0; beam < 8; beam++) {
+          const beamAngle = (beam / 8) * Math.PI * 2;
+          for (let step = 0; step < 10; step++) {
+            const t = step / 9;
+            const y = conePosition.y - t * coneHeight;
+            const radius =
+              coneTopRadius + (coneBottomRadius - coneTopRadius) * t;
+            const x = conePosition.x + Math.cos(beamAngle) * radius;
+            const z = conePosition.z + Math.sin(beamAngle) * radius;
+            points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+          }
+        }
+
         distributePointsToParticles(points);
       }
 
