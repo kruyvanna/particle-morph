@@ -217,9 +217,6 @@
     <div id="ui">
       <div id="title">PARTICLE MORPH</div>
       <div class="button" data-shape="sphere">SPHERE</div>
-      <div class="button" data-shape="bird">BIRD</div>
-      <div class="button" data-shape="face">HUMAN</div>
-      <div class="button" data-shape="tree">TREE</div>
       <div class="button" data-shape="angkorwat">ANGKOR WAT</div>
       <div class="button" data-shape="satellite">SATELLITE</div>
       <div class="button" data-shape="drone">DRONE</div>
@@ -587,15 +584,6 @@
           case "sphere":
             generateSphere();
             break;
-          case "bird":
-            generateBird();
-            break;
-          case "face":
-            generateFace();
-            break;
-          case "tree":
-            generateTree();
-            break;
           case "angkorwat":
             generateAngkorWat();
             break;
@@ -627,147 +615,6 @@
         }
       }
 
-      function generateBird() {
-        const points = [];
-        const scale = 0.8;
-
-        // Wing structure
-        for (let u = 0; u <= 1; u += 0.02) {
-          for (let v = 0; v <= 1; v += 0.1) {
-            // Left wing
-            const wingSpan = 30 * (1 - u * u);
-            const x1 = -wingSpan * v * scale;
-            const y1 = Math.sin(v * Math.PI) * 5 * scale;
-            const z1 = u * 20 * scale - 10 * scale;
-            points.push(new THREE.Vector3(x1, y1, z1));
-
-            // Right wing
-            const x2 = wingSpan * v * scale;
-            points.push(new THREE.Vector3(x2, y1, z1));
-          }
-        }
-
-        // Body
-        for (let t = 0; t <= 1; t += 0.02) {
-          const bodyRadius = 3 * (1 - t * t * 0.5);
-          for (let theta = 0; theta < Math.PI * 2; theta += 0.2) {
-            const x = Math.cos(theta) * bodyRadius * scale;
-            const y = Math.sin(theta) * bodyRadius * scale;
-            const z = (t - 0.5) * 25 * scale;
-            points.push(new THREE.Vector3(x, y, z));
-          }
-        }
-
-        // Head
-        for (let i = 0; i < 200; i++) {
-          const theta = Math.random() * Math.PI * 2;
-          const phi = Math.acos(Math.random() * 2 - 1);
-          const r = 4 * scale;
-          const x = r * Math.sin(phi) * Math.cos(theta);
-          const y = r * Math.sin(phi) * Math.sin(theta) + 3 * scale;
-          const z = r * Math.cos(phi) + 12 * scale;
-          points.push(new THREE.Vector3(x, y, z));
-        }
-
-        // Tail feathers
-        for (let i = 0; i < 5; i++) {
-          const angle = (i / 5) * Math.PI - Math.PI / 2;
-          for (let t = 0; t < 1; t += 0.05) {
-            const x = Math.cos(angle) * t * 15 * scale;
-            const y = Math.sin(angle) * t * 8 * scale;
-            const z = -10 * scale - t * 8 * scale;
-            points.push(new THREE.Vector3(x, y, z));
-          }
-        }
-
-        distributePointsToParticles(points);
-      }
-
-      function generateFace() {
-        const points = [];
-        const scale = 1.2;
-
-        // Head outline - ellipsoid
-        for (let theta = 0; theta <= Math.PI; theta += 0.05) {
-          for (let phi = 0; phi <= Math.PI * 2; phi += 0.1) {
-            const r = 15;
-            const x = r * Math.sin(theta) * Math.cos(phi) * scale;
-            const y = r * Math.cos(theta) * 1.2 * scale + 5;
-            const z = r * Math.sin(theta) * Math.sin(phi) * 0.8 * scale;
-
-            // Add some noise to make it more organic
-            const noise = (Math.random() - 0.5) * 1;
-            points.push(new THREE.Vector3(x + noise, y + noise, z + noise));
-          }
-        }
-
-        // Eyes
-        const eyePositions = [
-          [-6, 8, 6],
-          [6, 8, 6],
-        ];
-        for (let eye of eyePositions) {
-          for (let i = 0; i < 150; i++) {
-            const angle = (i / 150) * Math.PI * 2;
-            const r = Math.random() * 2.5;
-            const x = eye[0] + Math.cos(angle) * r * scale;
-            const y = eye[1] + Math.sin(angle) * r * scale;
-            const z = eye[2] + Math.random() * scale;
-            points.push(new THREE.Vector3(x, y, z));
-          }
-        }
-
-        // Nose
-        for (let t = 0; t <= 1; t += 0.05) {
-          for (let i = 0; i < 50; i++) {
-            const x = (Math.random() - 0.5) * 3 * (1 - t) * scale;
-            const y = 5 - t * 7 * scale;
-            const z = 8 + Math.random() * 2 * scale;
-            points.push(new THREE.Vector3(x, y, z));
-          }
-        }
-
-        // Mouth
-        for (let t = 0; t <= 1; t += 0.02) {
-          const angle = t * Math.PI;
-          const r = 7;
-          const x = Math.cos(angle) * r * scale;
-          const y = -5 - Math.sin(angle) * 2 * scale;
-          const z = 6 + Math.random() * scale;
-          points.push(new THREE.Vector3(x, y, z));
-
-          // Add thickness
-          for (let i = 0; i < 10; i++) {
-            points.push(
-              new THREE.Vector3(
-                x + (Math.random() - 0.5) * 2,
-                y + (Math.random() - 0.5) * 2,
-                z + Math.random()
-              )
-            );
-          }
-        }
-
-        // Cheeks - add volume
-        const cheekPositions = [
-          [-10, 0, 5],
-          [10, 0, 5],
-        ];
-        for (let cheek of cheekPositions) {
-          for (let i = 0; i < 200; i++) {
-            const theta = Math.random() * Math.PI * 2;
-            const phi = Math.acos(Math.random() * 2 - 1);
-            const r = 5 * Math.random();
-            const x = cheek[0] + r * Math.sin(phi) * Math.cos(theta) * scale;
-            const y = cheek[1] + r * Math.sin(phi) * Math.sin(theta) * scale;
-            const z = cheek[2] + r * Math.cos(phi) * scale;
-            points.push(new THREE.Vector3(x, y, z));
-          }
-        }
-
-        distributePointsToParticles(points);
-      }
-
       function generateSatellite() {
         const points = [];
         const scale = 0.9;
@@ -776,19 +623,21 @@
         const bodyWidth = 8;
         const bodyHeight = 12;
         const bodyDepth = 6;
-        
+
         // Central body structure
         for (let x = -bodyWidth; x <= bodyWidth; x += 0.3) {
-          for (let y = -bodyHeight/2; y <= bodyHeight/2; y += 0.3) {
+          for (let y = -bodyHeight / 2; y <= bodyHeight / 2; y += 0.3) {
             for (let z = -bodyDepth; z <= bodyDepth; z += 0.3) {
               // Create hollow body with walls
-              const isWall = Math.abs(x) > bodyWidth - 0.5 || 
-                           Math.abs(y) > bodyHeight/2 - 0.5 || 
-                           Math.abs(z) > bodyDepth - 0.5;
-              const isInner = Math.abs(x) < bodyWidth - 1 && 
-                            Math.abs(y) < bodyHeight/2 - 1 && 
-                            Math.abs(z) < bodyDepth - 1;
-              
+              const isWall =
+                Math.abs(x) > bodyWidth - 0.5 ||
+                Math.abs(y) > bodyHeight / 2 - 0.5 ||
+                Math.abs(z) > bodyDepth - 0.5;
+              const isInner =
+                Math.abs(x) < bodyWidth - 1 &&
+                Math.abs(y) < bodyHeight / 2 - 1 &&
+                Math.abs(z) < bodyDepth - 1;
+
               if (isWall && !isInner) {
                 points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
               }
@@ -800,42 +649,46 @@
         const panelWidth = 20;
         const panelHeight = 12;
         const panelThickness = 0.3;
-        
+
         // Left solar panel array
         for (let x = -bodyWidth - panelWidth; x <= -bodyWidth; x += 0.4) {
-          for (let y = -panelHeight/2; y <= panelHeight/2; y += 0.4) {
+          for (let y = -panelHeight / 2; y <= panelHeight / 2; y += 0.4) {
             for (let z = -panelThickness; z <= panelThickness; z += 0.2) {
               points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
             }
-            
+
             // Solar cell grid pattern
             if (x % 2 < 0.4 && y % 2 < 0.4) {
               for (let detail = 0; detail < 3; detail++) {
-                points.push(new THREE.Vector3(
-                  x * scale + (Math.random() - 0.5) * 0.3,
-                  y * scale + (Math.random() - 0.5) * 0.3,
-                  (Math.random() - 0.5) * 0.5 * scale
-                ));
+                points.push(
+                  new THREE.Vector3(
+                    x * scale + (Math.random() - 0.5) * 0.3,
+                    y * scale + (Math.random() - 0.5) * 0.3,
+                    (Math.random() - 0.5) * 0.5 * scale
+                  )
+                );
               }
             }
           }
         }
-        
+
         // Right solar panel array
         for (let x = bodyWidth; x <= bodyWidth + panelWidth; x += 0.4) {
-          for (let y = -panelHeight/2; y <= panelHeight/2; y += 0.4) {
+          for (let y = -panelHeight / 2; y <= panelHeight / 2; y += 0.4) {
             for (let z = -panelThickness; z <= panelThickness; z += 0.2) {
               points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
             }
-            
+
             // Solar cell grid pattern
             if (x % 2 < 0.4 && y % 2 < 0.4) {
               for (let detail = 0; detail < 3; detail++) {
-                points.push(new THREE.Vector3(
-                  x * scale + (Math.random() - 0.5) * 0.3,
-                  y * scale + (Math.random() - 0.5) * 0.3,
-                  (Math.random() - 0.5) * 0.5 * scale
-                ));
+                points.push(
+                  new THREE.Vector3(
+                    x * scale + (Math.random() - 0.5) * 0.3,
+                    y * scale + (Math.random() - 0.5) * 0.3,
+                    (Math.random() - 0.5) * 0.5 * scale
+                  )
+                );
               }
             }
           }
@@ -844,7 +697,7 @@
         // Solar panel support arms/hinges
         const armLength = 3;
         const armThickness = 0.8;
-        
+
         // Left arm
         for (let x = -bodyWidth; x >= -bodyWidth - armLength; x -= 0.2) {
           for (let arm = 0; arm < 16; arm++) {
@@ -854,7 +707,7 @@
             points.push(new THREE.Vector3(armX * scale, 0, armZ * scale));
           }
         }
-        
+
         // Right arm
         for (let x = bodyWidth; x <= bodyWidth + armLength; x += 0.2) {
           for (let arm = 0; arm < 16; arm++) {
@@ -869,29 +722,28 @@
         const dishRadius = 4;
         const dishDepth = 1.5;
         const dishX = 0;
-        const dishY = bodyHeight/2 + 2;
+        const dishY = bodyHeight / 2 + 2;
         const dishZ = 0;
-        
+
         // Parabolic dish shape
         for (let angle = 0; angle < Math.PI * 2; angle += 0.05) {
           for (let r = 0; r <= dishRadius; r += 0.2) {
-            const parabolaDepth = (r / dishRadius) * (r / dishRadius) * dishDepth;
+            const parabolaDepth =
+              (r / dishRadius) * (r / dishRadius) * dishDepth;
             const x = dishX + Math.cos(angle) * r;
             const y = dishY + parabolaDepth;
             const z = dishZ + Math.sin(angle) * r;
             points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
-            
+
             // Dish surface detail
             if (r > 0) {
-              points.push(new THREE.Vector3(
-                x * scale,
-                (y - 0.1) * scale,
-                z * scale
-              ));
+              points.push(
+                new THREE.Vector3(x * scale, (y - 0.1) * scale, z * scale)
+              );
             }
           }
         }
-        
+
         // Dish support structure
         const supportHeight = 2;
         for (let support = 0; support < 3; support++) {
@@ -906,51 +758,55 @@
 
         // Multiple antenna arrays
         const antennas = [
-          { x: 3, y: bodyHeight/2 + 1, z: bodyDepth + 1, type: 'rod' },
-          { x: -3, y: bodyHeight/2 + 1, z: bodyDepth + 1, type: 'rod' },
-          { x: 0, y: bodyHeight/2 + 1, z: -bodyDepth - 2, type: 'array' },
-          { x: bodyWidth, y: 2, z: bodyDepth + 1, type: 'small_dish' }
+          { x: 3, y: bodyHeight / 2 + 1, z: bodyDepth + 1, type: "rod" },
+          { x: -3, y: bodyHeight / 2 + 1, z: bodyDepth + 1, type: "rod" },
+          { x: 0, y: bodyHeight / 2 + 1, z: -bodyDepth - 2, type: "array" },
+          { x: bodyWidth, y: 2, z: bodyDepth + 1, type: "small_dish" },
         ];
-        
+
         for (let antenna of antennas) {
-          if (antenna.type === 'rod') {
+          if (antenna.type === "rod") {
             // Rod antenna
             const rodLength = 6;
             for (let h = 0; h < rodLength; h += 0.1) {
-              points.push(new THREE.Vector3(
-                antenna.x * scale,
-                (antenna.y + h) * scale,
-                antenna.z * scale
-              ));
-              
+              points.push(
+                new THREE.Vector3(
+                  antenna.x * scale,
+                  (antenna.y + h) * scale,
+                  antenna.z * scale
+                )
+              );
+
               // Cross elements on rod
               if (h % 2 < 0.2) {
                 for (let cross = -0.5; cross <= 0.5; cross += 0.2) {
-                  points.push(new THREE.Vector3(
-                    (antenna.x + cross) * scale,
-                    (antenna.y + h) * scale,
-                    antenna.z * scale
-                  ));
+                  points.push(
+                    new THREE.Vector3(
+                      (antenna.x + cross) * scale,
+                      (antenna.y + h) * scale,
+                      antenna.z * scale
+                    )
+                  );
                 }
               }
             }
-            
-          } else if (antenna.type === 'array') {
+          } else if (antenna.type === "array") {
             // Phased array antenna
             const arraySize = 3;
             for (let i = -arraySize; i <= arraySize; i += 0.3) {
               for (let j = -arraySize; j <= arraySize; j += 0.3) {
                 for (let depth = 0; depth < 1; depth += 0.2) {
-                  points.push(new THREE.Vector3(
-                    (antenna.x + i) * scale,
-                    (antenna.y + depth) * scale,
-                    (antenna.z + j) * scale
-                  ));
+                  points.push(
+                    new THREE.Vector3(
+                      (antenna.x + i) * scale,
+                      (antenna.y + depth) * scale,
+                      (antenna.z + j) * scale
+                    )
+                  );
                 }
               }
             }
-            
-          } else if (antenna.type === 'small_dish') {
+          } else if (antenna.type === "small_dish") {
             // Small communication dish
             const smallDishR = 1.5;
             for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
@@ -966,18 +822,18 @@
 
         // Thruster modules
         const thrusters = [
-          { x: 0, y: -bodyHeight/2 - 1, z: bodyDepth + 1 },
-          { x: 2, y: -bodyHeight/2 - 1, z: bodyDepth + 1 },
-          { x: -2, y: -bodyHeight/2 - 1, z: bodyDepth + 1 }
+          { x: 0, y: -bodyHeight / 2 - 1, z: bodyDepth + 1 },
+          { x: 2, y: -bodyHeight / 2 - 1, z: bodyDepth + 1 },
+          { x: -2, y: -bodyHeight / 2 - 1, z: bodyDepth + 1 },
         ];
-        
+
         for (let thruster of thrusters) {
           // Thruster nozzle
           const nozzleLength = 2;
           const nozzleRadius = 0.8;
-          
+
           for (let h = 0; h < nozzleLength; h += 0.1) {
-            const radius = nozzleRadius * (1 - h / nozzleLength * 0.3);
+            const radius = nozzleRadius * (1 - (h / nozzleLength) * 0.3);
             for (let angle = 0; angle < Math.PI * 2; angle += 0.2) {
               const x = thruster.x + Math.cos(angle) * radius;
               const y = thruster.y - h;
@@ -991,23 +847,26 @@
         const modules = [
           { x: -bodyWidth + 1, y: 2, z: 0, size: 2 },
           { x: bodyWidth - 1, y: 2, z: 0, size: 1.5 },
-          { x: 0, y: -2, z: bodyDepth - 1, size: 1.8 }
+          { x: 0, y: -2, z: bodyDepth - 1, size: 1.8 },
         ];
-        
+
         for (let module of modules) {
           // Cubic equipment modules
           for (let x = -module.size; x <= module.size; x += 0.3) {
             for (let y = -module.size; y <= module.size; y += 0.3) {
               for (let z = -module.size; z <= module.size; z += 0.3) {
-                const isEdge = Math.abs(x) > module.size - 0.4 || 
-                              Math.abs(y) > module.size - 0.4 || 
-                              Math.abs(z) > module.size - 0.4;
+                const isEdge =
+                  Math.abs(x) > module.size - 0.4 ||
+                  Math.abs(y) > module.size - 0.4 ||
+                  Math.abs(z) > module.size - 0.4;
                 if (isEdge) {
-                  points.push(new THREE.Vector3(
-                    (module.x + x) * scale,
-                    (module.y + y) * scale,
-                    (module.z + z) * scale
-                  ));
+                  points.push(
+                    new THREE.Vector3(
+                      (module.x + x) * scale,
+                      (module.y + y) * scale,
+                      (module.z + z) * scale
+                    )
+                  );
                 }
               }
             }
@@ -1018,22 +877,24 @@
         const radiatorWidth = 6;
         const radiatorHeight = 8;
         const radiatorThickness = 0.2;
-        
+
         // Top radiator
-        for (let x = -radiatorWidth/2; x <= radiatorWidth/2; x += 0.4) {
+        for (let x = -radiatorWidth / 2; x <= radiatorWidth / 2; x += 0.4) {
           for (let z = -bodyDepth - radiatorHeight; z <= -bodyDepth; z += 0.4) {
             for (let y = -radiatorThickness; y <= radiatorThickness; y += 0.1) {
               points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
             }
-            
+
             // Radiator fins
             if (x % 1 < 0.4) {
               for (let fin = 0; fin < 3; fin++) {
-                points.push(new THREE.Vector3(
-                  x * scale,
-                  (fin * 0.3 - 0.3) * scale,
-                  z * scale
-                ));
+                points.push(
+                  new THREE.Vector3(
+                    x * scale,
+                    (fin * 0.3 - 0.3) * scale,
+                    z * scale
+                  )
+                );
               }
             }
           }
@@ -1043,9 +904,9 @@
         const dockingPortRadius = 1.5;
         const dockingPortLength = 1;
         const dockingX = 0;
-        const dockingY = -bodyHeight/2 - 1;
+        const dockingY = -bodyHeight / 2 - 1;
         const dockingZ = -bodyDepth - 1;
-        
+
         for (let h = 0; h < dockingPortLength; h += 0.1) {
           for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
             const x = dockingX + Math.cos(angle) * dockingPortRadius;
@@ -1059,41 +920,46 @@
         const cables = [
           { start: [-bodyWidth, 0, 0], end: [-bodyWidth - 2, 0, 0] },
           { start: [bodyWidth, 0, 0], end: [bodyWidth + 2, 0, 0] },
-          { start: [0, bodyHeight/2, bodyDepth], end: [0, bodyHeight/2 + 2, bodyDepth] }
+          {
+            start: [0, bodyHeight / 2, bodyDepth],
+            end: [0, bodyHeight / 2 + 2, bodyDepth],
+          },
         ];
-        
+
         for (let cable of cables) {
           for (let t = 0; t <= 1; t += 0.05) {
             const x = cable.start[0] + (cable.end[0] - cable.start[0]) * t;
             const y = cable.start[1] + (cable.end[1] - cable.start[1]) * t;
             const z = cable.start[2] + (cable.end[2] - cable.start[2]) * t;
-            
+
             // Main cable
             points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
-            
+
             // Cable thickness
             for (let thick = 0; thick < 3; thick++) {
               const offset = 0.1;
-              points.push(new THREE.Vector3(
-                x * scale + (Math.random() - 0.5) * offset,
-                y * scale + (Math.random() - 0.5) * offset,
-                z * scale + (Math.random() - 0.5) * offset
-              ));
+              points.push(
+                new THREE.Vector3(
+                  x * scale + (Math.random() - 0.5) * offset,
+                  y * scale + (Math.random() - 0.5) * offset,
+                  z * scale + (Math.random() - 0.5) * offset
+                )
+              );
             }
           }
         }
 
         // Star tracker sensors
         const starTrackers = [
-          { x: bodyWidth - 1, y: bodyHeight/2 - 1, z: -bodyDepth + 1 },
-          { x: -bodyWidth + 1, y: bodyHeight/2 - 1, z: -bodyDepth + 1 }
+          { x: bodyWidth - 1, y: bodyHeight / 2 - 1, z: -bodyDepth + 1 },
+          { x: -bodyWidth + 1, y: bodyHeight / 2 - 1, z: -bodyDepth + 1 },
         ];
-        
+
         for (let tracker of starTrackers) {
           // Cylindrical sensor
           const sensorRadius = 0.5;
           const sensorLength = 1;
-          
+
           for (let h = 0; h < sensorLength; h += 0.1) {
             for (let angle = 0; angle < Math.PI * 2; angle += 0.2) {
               const x = tracker.x + Math.cos(angle) * sensorRadius;
@@ -1106,65 +972,85 @@
 
         // Data transmission beams - directed towards Earth (downward)
         const beamOrigins = [
-          { x: 0, y: -bodyHeight/2 - 2, z: 0, type: 'main' },
-          { x: 3, y: -bodyHeight/2 - 1, z: 2, type: 'secondary' },
-          { x: -3, y: -bodyHeight/2 - 1, z: 2, type: 'secondary' },
-          { x: 0, y: -bodyHeight/2 - 1, z: -bodyDepth - 1, type: 'scanning' }
+          { x: 0, y: -bodyHeight / 2 - 2, z: 0, type: "main" },
+          { x: 3, y: -bodyHeight / 2 - 1, z: 2, type: "secondary" },
+          { x: -3, y: -bodyHeight / 2 - 1, z: 2, type: "secondary" },
+          { x: 0, y: -bodyHeight / 2 - 1, z: -bodyDepth - 1, type: "scanning" },
         ];
 
         for (let beam of beamOrigins) {
-          const beamLength = beam.type === 'main' ? 40 : 25;
-          const beamWidth = beam.type === 'main' ? 12 : 8;
-          const beamDensity = beam.type === 'main' ? 0.05 : 0.08;
+          const beamLength = beam.type === "main" ? 40 : 25;
+          const beamWidth = beam.type === "main" ? 12 : 8;
+          const beamDensity = beam.type === "main" ? 0.05 : 0.08;
 
           // Create expanding cone-shaped beam
           for (let t = 0; t <= 1; t += beamDensity) {
             const beamY = beam.y - t * beamLength;
             const currentRadius = t * beamWidth;
-            
+
             // Beam particles distributed in expanding circle
             const particlesInRing = Math.floor(currentRadius * 8) + 5;
             for (let p = 0; p < particlesInRing; p++) {
               const angle = (p / particlesInRing) * Math.PI * 2;
               const r = Math.random() * currentRadius;
-              
+
               // Add some randomness for realistic beam scatter
               const scatter = 0.5;
-              const beamX = beam.x + Math.cos(angle) * r + (Math.random() - 0.5) * scatter;
-              const beamZ = beam.z + Math.sin(angle) * r + (Math.random() - 0.5) * scatter;
+              const beamX =
+                beam.x + Math.cos(angle) * r + (Math.random() - 0.5) * scatter;
+              const beamZ =
+                beam.z + Math.sin(angle) * r + (Math.random() - 0.5) * scatter;
               const beamYScatter = beamY + (Math.random() - 0.5) * scatter;
-              
-              points.push(new THREE.Vector3(beamX * scale, beamYScatter * scale, beamZ * scale));
+
+              points.push(
+                new THREE.Vector3(
+                  beamX * scale,
+                  beamYScatter * scale,
+                  beamZ * scale
+                )
+              );
             }
-            
+
             // Dense center beam for main transmission
-            if (beam.type === 'main') {
+            if (beam.type === "main") {
               const centerDensity = 15;
               for (let c = 0; c < centerDensity; c++) {
                 const centerRadius = Math.random() * (currentRadius * 0.3);
                 const centerAngle = Math.random() * Math.PI * 2;
                 const centerX = beam.x + Math.cos(centerAngle) * centerRadius;
                 const centerZ = beam.z + Math.sin(centerAngle) * centerRadius;
-                points.push(new THREE.Vector3(centerX * scale, beamY * scale, centerZ * scale));
+                points.push(
+                  new THREE.Vector3(
+                    centerX * scale,
+                    beamY * scale,
+                    centerZ * scale
+                  )
+                );
               }
             }
           }
-          
+
           // Scanning beam pattern (for radar/scanning beams)
-          if (beam.type === 'scanning') {
+          if (beam.type === "scanning") {
             for (let sweep = 0; sweep < 3; sweep++) {
               const sweepAngle = (sweep / 3) * Math.PI * 2;
-              
+
               for (let t = 0; t <= 1; t += 0.03) {
                 const scanLength = 30;
                 const scanY = beam.y - t * scanLength;
                 const scanWidth = t * 15;
-                
+
                 // Sweeping pattern
                 for (let w = -scanWidth; w <= scanWidth; w += 0.5) {
                   const scanX = beam.x + Math.cos(sweepAngle) * w;
                   const scanZ = beam.z + Math.sin(sweepAngle) * w;
-                  points.push(new THREE.Vector3(scanX * scale, scanY * scale, scanZ * scale));
+                  points.push(
+                    new THREE.Vector3(
+                      scanX * scale,
+                      scanY * scale,
+                      scanZ * scale
+                    )
+                  );
                 }
               }
             }
@@ -1178,28 +1064,32 @@
           const streamRadius = 6;
           const streamX = Math.cos(streamAngle) * streamRadius;
           const streamZ = Math.sin(streamAngle) * streamRadius;
-          
+
           // Create flowing data stream
           for (let flow = 0; flow < 50; flow += 2) {
-            const flowY = -bodyHeight/2 - flow;
+            const flowY = -bodyHeight / 2 - flow;
             const flowWave = Math.sin(flow * 0.2) * 1.5; // Slight wave motion
-            
+
             // Main stream particles
-            points.push(new THREE.Vector3(
-              (streamX + flowWave) * scale,
-              flowY * scale,
-              (streamZ + flowWave * 0.5) * scale
-            ));
-            
+            points.push(
+              new THREE.Vector3(
+                (streamX + flowWave) * scale,
+                flowY * scale,
+                (streamZ + flowWave * 0.5) * scale
+              )
+            );
+
             // Stream variations
             for (let variation = 0; variation < 3; variation++) {
               const varX = streamX + (Math.random() - 0.5) * 2;
               const varZ = streamZ + (Math.random() - 0.5) * 2;
-              points.push(new THREE.Vector3(
-                varX * scale,
-                (flowY + variation * 0.3) * scale,
-                varZ * scale
-              ));
+              points.push(
+                new THREE.Vector3(
+                  varX * scale,
+                  (flowY + variation * 0.3) * scale,
+                  varZ * scale
+                )
+              );
             }
           }
         }
@@ -1210,20 +1100,22 @@
           y: dishY - 1,
           z: dishZ,
           length: 35,
-          width: 0.5
+          width: 0.5,
         };
 
         for (let t = 0; t <= 1; t += 0.02) {
           const laserY = laserBeam.y - t * laserBeam.length;
           const laserRadius = laserBeam.width + t * 2; // Slight expansion
-          
+
           // Dense laser beam core
           for (let core = 0; core < 20; core++) {
             const coreAngle = Math.random() * Math.PI * 2;
             const coreR = Math.random() * laserRadius;
             const laserX = laserBeam.x + Math.cos(coreAngle) * coreR;
             const laserZ = laserBeam.z + Math.sin(coreAngle) * coreR;
-            points.push(new THREE.Vector3(laserX * scale, laserY * scale, laserZ * scale));
+            points.push(
+              new THREE.Vector3(laserX * scale, laserY * scale, laserZ * scale)
+            );
           }
         }
 
@@ -1231,28 +1123,32 @@
         const interferenceRadius = 20;
         for (let ring = 1; ring <= 5; ring++) {
           const ringRadius = interferenceRadius * (ring / 5);
-          const ringY = -bodyHeight/2 - ring * 3;
-          
+          const ringY = -bodyHeight / 2 - ring * 3;
+
           for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
             // Interference ring particles
             const ringX = Math.cos(angle) * ringRadius;
             const ringZ = Math.sin(angle) * ringRadius;
-            
+
             // Add wave-like distortion
             const wave = Math.sin(angle * 6 + ring) * 0.8;
-            points.push(new THREE.Vector3(
-              ringX * scale,
-              (ringY + wave) * scale,
-              ringZ * scale
-            ));
-            
+            points.push(
+              new THREE.Vector3(
+                ringX * scale,
+                (ringY + wave) * scale,
+                ringZ * scale
+              )
+            );
+
             // Secondary interference
             if (ring % 2 === 0) {
-              points.push(new THREE.Vector3(
-                (ringX * 0.7) * scale,
-                (ringY + wave * 0.5) * scale,
-                (ringZ * 0.7) * scale
-              ));
+              points.push(
+                new THREE.Vector3(
+                  ringX * 0.7 * scale,
+                  (ringY + wave * 0.5) * scale,
+                  ringZ * 0.7 * scale
+                )
+              );
             }
           }
         }
@@ -1267,7 +1163,7 @@
         // Central body/frame - main hub
         const bodyRadius = 4;
         const bodyHeight = 2;
-        
+
         // Main central body (cylindrical/rounded)
         for (let y = -bodyHeight; y <= bodyHeight; y += 0.2) {
           for (let angle = 0; angle < Math.PI * 2; angle += 0.05) {
@@ -1278,7 +1174,7 @@
             }
           }
         }
-        
+
         // Inner body structure
         for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
           for (let r = 0; r < bodyRadius - 1; r += 0.5) {
@@ -1291,40 +1187,52 @@
         // Drone arms - 4 extending from center
         const armLength = 12;
         const armThickness = 0.8;
-        const armAngles = [0, Math.PI/2, Math.PI, 3*Math.PI/2];
-        
+        const armAngles = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2];
+
         for (let armIndex = 0; armIndex < 4; armIndex++) {
           const armAngle = armAngles[armIndex];
-          
+
           // Main arm structure
           for (let t = 0; t <= 1; t += 0.02) {
             const armR = bodyRadius + t * armLength;
             const armX = Math.cos(armAngle) * armR;
             const armZ = Math.sin(armAngle) * armR;
-            
+
             // Arm cross-section (rectangular beam)
-            for (let thickness = -armThickness; thickness <= armThickness; thickness += 0.2) {
-              for (let width = -armThickness; width <= armThickness; width += 0.2) {
-                const perpAngle = armAngle + Math.PI/2;
+            for (
+              let thickness = -armThickness;
+              thickness <= armThickness;
+              thickness += 0.2
+            ) {
+              for (
+                let width = -armThickness;
+                width <= armThickness;
+                width += 0.2
+              ) {
+                const perpAngle = armAngle + Math.PI / 2;
                 const offsetX = Math.cos(perpAngle) * thickness;
                 const offsetZ = Math.sin(perpAngle) * thickness;
-                
-                points.push(new THREE.Vector3(
-                  (armX + offsetX) * scale,
-                  width * scale,
-                  (armZ + offsetZ) * scale
-                ));
+
+                points.push(
+                  new THREE.Vector3(
+                    (armX + offsetX) * scale,
+                    width * scale,
+                    (armZ + offsetZ) * scale
+                  )
+                );
               }
             }
-            
+
             // Arm reinforcement struts
             if (t > 0.3 && t % 0.2 < 0.05) {
               for (let strut = -1; strut <= 1; strut += 0.2) {
-                points.push(new THREE.Vector3(
-                  armX * scale,
-                  (strut * 2) * scale,
-                  armZ * scale
-                ));
+                points.push(
+                  new THREE.Vector3(
+                    armX * scale,
+                    strut * 2 * scale,
+                    armZ * scale
+                  )
+                );
               }
             }
           }
@@ -1335,13 +1243,13 @@
         const motorHeight = 2;
         const propellerRadius = 6;
         const propellerThickness = 0.15;
-        
+
         for (let motorIndex = 0; motorIndex < 4; motorIndex++) {
           const motorAngle = armAngles[motorIndex];
           const motorDistance = bodyRadius + armLength;
           const motorX = Math.cos(motorAngle) * motorDistance;
           const motorZ = Math.sin(motorAngle) * motorDistance;
-          
+
           // Motor housing
           for (let y = -motorHeight; y <= motorHeight; y += 0.2) {
             for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
@@ -1352,7 +1260,7 @@
               }
             }
           }
-          
+
           // Motor shaft
           for (let shaft = 0; shaft < 1; shaft += 0.1) {
             for (let angle = 0; angle < Math.PI * 2; angle += 0.2) {
@@ -1363,34 +1271,56 @@
               points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
             }
           }
-          
+
           // Propellers (2 blades each)
           for (let blade = 0; blade < 2; blade++) {
             const bladeAngle = motorAngle + blade * Math.PI;
-            
+
             // Blade shape (tapered from hub to tip)
             for (let t = 0; t <= 1; t += 0.02) {
               const bladeR = t * propellerRadius;
               const bladeWidth = (1 - t * 0.7) * 0.8;
-              const twist = t * Math.PI / 6; // Blade twist
-              
+              const twist = (t * Math.PI) / 6; // Blade twist
+
               for (let w = -bladeWidth; w <= bladeWidth; w += 0.1) {
-                for (let thick = -propellerThickness; thick <= propellerThickness; thick += 0.1) {
-                  const bladeX = motorX + Math.cos(bladeAngle + twist) * bladeR + Math.cos(bladeAngle + Math.PI/2) * w;
-                  const bladeZ = motorZ + Math.sin(bladeAngle + twist) * bladeR + Math.sin(bladeAngle + Math.PI/2) * w;
+                for (
+                  let thick = -propellerThickness;
+                  thick <= propellerThickness;
+                  thick += 0.1
+                ) {
+                  const bladeX =
+                    motorX +
+                    Math.cos(bladeAngle + twist) * bladeR +
+                    Math.cos(bladeAngle + Math.PI / 2) * w;
+                  const bladeZ =
+                    motorZ +
+                    Math.sin(bladeAngle + twist) * bladeR +
+                    Math.sin(bladeAngle + Math.PI / 2) * w;
                   const bladeY = motorHeight + 1 + thick;
-                  points.push(new THREE.Vector3(bladeX * scale, bladeY * scale, bladeZ * scale));
+                  points.push(
+                    new THREE.Vector3(
+                      bladeX * scale,
+                      bladeY * scale,
+                      bladeZ * scale
+                    )
+                  );
                 }
               }
             }
           }
-          
+
           // Propeller hub
           for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
             for (let r = 0; r <= 1; r += 0.2) {
               const x = motorX + Math.cos(angle) * r;
               const z = motorZ + Math.sin(angle) * r;
-              points.push(new THREE.Vector3(x * scale, (motorHeight + 1) * scale, z * scale));
+              points.push(
+                new THREE.Vector3(
+                  x * scale,
+                  (motorHeight + 1) * scale,
+                  z * scale
+                )
+              );
             }
           }
         }
@@ -1399,7 +1329,7 @@
         const gimbalX = 0;
         const gimbalY = -bodyHeight - 2;
         const gimbalZ = bodyRadius + 1;
-        
+
         // Gimbal frame
         const gimbalSize = 2;
         for (let frame = 0; frame < 2; frame++) {
@@ -1412,29 +1342,32 @@
             points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
           }
         }
-        
+
         // Camera body
         const cameraWidth = 1.5;
         const cameraHeight = 1;
         const cameraDepth = 2;
-        
+
         for (let x = -cameraWidth; x <= cameraWidth; x += 0.2) {
           for (let y = -cameraHeight; y <= cameraHeight; y += 0.2) {
             for (let z = -cameraDepth; z <= cameraDepth; z += 0.2) {
-              const isEdge = Math.abs(x) > cameraWidth - 0.3 || 
-                           Math.abs(y) > cameraHeight - 0.3 || 
-                           Math.abs(z) > cameraDepth - 0.3;
+              const isEdge =
+                Math.abs(x) > cameraWidth - 0.3 ||
+                Math.abs(y) > cameraHeight - 0.3 ||
+                Math.abs(z) > cameraDepth - 0.3;
               if (isEdge) {
-                points.push(new THREE.Vector3(
-                  (gimbalX + x) * scale,
-                  (gimbalY + y) * scale,
-                  (gimbalZ + z) * scale
-                ));
+                points.push(
+                  new THREE.Vector3(
+                    (gimbalX + x) * scale,
+                    (gimbalY + y) * scale,
+                    (gimbalZ + z) * scale
+                  )
+                );
               }
             }
           }
         }
-        
+
         // Camera lens
         const lensRadius = 0.8;
         for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
@@ -1451,13 +1384,13 @@
           { x: 3, z: 3 },
           { x: -3, z: 3 },
           { x: 3, z: -3 },
-          { x: -3, z: -3 }
+          { x: -3, z: -3 },
         ];
-        
+
         for (let leg of legPositions) {
           const legHeight = 4;
           const legThickness = 0.3;
-          
+
           // Main leg strut
           for (let h = 0; h < legHeight; h += 0.1) {
             for (let thick = 0; thick < 8; thick++) {
@@ -1468,7 +1401,7 @@
               points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
             }
           }
-          
+
           // Foot pad
           const footRadius = 1;
           for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
@@ -1483,54 +1416,59 @@
 
         // Electronic components on top
         const components = [
-          { x: 0, y: bodyHeight + 1, z: 0, size: 1.5, type: 'gps' },
-          { x: 2, y: bodyHeight + 0.5, z: 2, size: 0.8, type: 'antenna' },
-          { x: -2, y: bodyHeight + 0.5, z: 2, size: 0.8, type: 'antenna' },
-          { x: 0, y: bodyHeight + 0.3, z: -2, size: 1, type: 'receiver' }
+          { x: 0, y: bodyHeight + 1, z: 0, size: 1.5, type: "gps" },
+          { x: 2, y: bodyHeight + 0.5, z: 2, size: 0.8, type: "antenna" },
+          { x: -2, y: bodyHeight + 0.5, z: 2, size: 0.8, type: "antenna" },
+          { x: 0, y: bodyHeight + 0.3, z: -2, size: 1, type: "receiver" },
         ];
-        
+
         for (let comp of components) {
-          if (comp.type === 'gps') {
+          if (comp.type === "gps") {
             // GPS module (cylindrical)
             const gpsRadius = comp.size;
             const gpsHeight = 0.8;
-            
+
             for (let h = 0; h < gpsHeight; h += 0.1) {
               for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
                 for (let r = gpsRadius - 0.2; r <= gpsRadius; r += 0.1) {
                   const x = comp.x + Math.cos(angle) * r;
                   const z = comp.z + Math.sin(angle) * r;
                   const y = comp.y + h;
-                  points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
+                  points.push(
+                    new THREE.Vector3(x * scale, y * scale, z * scale)
+                  );
                 }
               }
             }
-            
-          } else if (comp.type === 'antenna') {
+          } else if (comp.type === "antenna") {
             // Antenna rod
             const antennaHeight = 3;
             for (let h = 0; h < antennaHeight; h += 0.1) {
-              points.push(new THREE.Vector3(
-                comp.x * scale,
-                (comp.y + h) * scale,
-                comp.z * scale
-              ));
+              points.push(
+                new THREE.Vector3(
+                  comp.x * scale,
+                  (comp.y + h) * scale,
+                  comp.z * scale
+                )
+              );
             }
-            
-          } else if (comp.type === 'receiver') {
+          } else if (comp.type === "receiver") {
             // Receiver box
             for (let x = -comp.size; x <= comp.size; x += 0.2) {
               for (let y = 0; y <= comp.size; y += 0.2) {
                 for (let z = -comp.size; z <= comp.size; z += 0.2) {
-                  const isEdge = Math.abs(x) > comp.size - 0.2 || 
-                               y > comp.size - 0.2 || 
-                               Math.abs(z) > comp.size - 0.2;
+                  const isEdge =
+                    Math.abs(x) > comp.size - 0.2 ||
+                    y > comp.size - 0.2 ||
+                    Math.abs(z) > comp.size - 0.2;
                   if (isEdge) {
-                    points.push(new THREE.Vector3(
-                      (comp.x + x) * scale,
-                      (comp.y + y) * scale,
-                      (comp.z + z) * scale
-                    ));
+                    points.push(
+                      new THREE.Vector3(
+                        (comp.x + x) * scale,
+                        (comp.y + y) * scale,
+                        (comp.z + z) * scale
+                      )
+                    );
                   }
                 }
               }
@@ -1543,19 +1481,22 @@
         const batteryHeight = 1;
         const batteryDepth = 6;
         const batteryY = -bodyHeight - 1;
-        
+
         for (let x = -batteryWidth; x <= batteryWidth; x += 0.3) {
           for (let y = -batteryHeight; y <= 0; y += 0.2) {
             for (let z = -batteryDepth; z <= batteryDepth; z += 0.3) {
-              const isWall = Math.abs(x) > batteryWidth - 0.3 || 
-                           y < -batteryHeight + 0.2 || 
-                           Math.abs(z) > batteryDepth - 0.3;
+              const isWall =
+                Math.abs(x) > batteryWidth - 0.3 ||
+                y < -batteryHeight + 0.2 ||
+                Math.abs(z) > batteryDepth - 0.3;
               if (isWall) {
-                points.push(new THREE.Vector3(
-                  x * scale,
-                  (batteryY + y) * scale,
-                  z * scale
-                ));
+                points.push(
+                  new THREE.Vector3(
+                    x * scale,
+                    (batteryY + y) * scale,
+                    z * scale
+                  )
+                );
               }
             }
           }
@@ -1563,23 +1504,25 @@
 
         // LED lights (navigation/status)
         const ledPositions = [
-          { x: bodyRadius, y: 0, z: 0, color: 'red' },
-          { x: -bodyRadius, y: 0, z: 0, color: 'green' },
-          { x: 0, y: 0, z: bodyRadius, color: 'white' },
-          { x: 0, y: 0, z: -bodyRadius, color: 'white' }
+          { x: bodyRadius, y: 0, z: 0, color: "red" },
+          { x: -bodyRadius, y: 0, z: 0, color: "green" },
+          { x: 0, y: 0, z: bodyRadius, color: "white" },
+          { x: 0, y: 0, z: -bodyRadius, color: "white" },
         ];
-        
+
         for (let led of ledPositions) {
           // Small LED housings
           const ledSize = 0.3;
           for (let x = -ledSize; x <= ledSize; x += 0.1) {
             for (let y = -ledSize; y <= ledSize; y += 0.1) {
               for (let z = -ledSize; z <= ledSize; z += 0.1) {
-                points.push(new THREE.Vector3(
-                  (led.x + x) * scale,
-                  (led.y + y) * scale,
-                  (led.z + z) * scale
-                ));
+                points.push(
+                  new THREE.Vector3(
+                    (led.x + x) * scale,
+                    (led.y + y) * scale,
+                    (led.z + z) * scale
+                  )
+                );
               }
             }
           }
@@ -1591,26 +1534,28 @@
           { start: [0, 0, 0], end: [0, 0, bodyRadius + armLength] },
           { start: [0, 0, 0], end: [-bodyRadius - armLength, 0, 0] },
           { start: [0, 0, 0], end: [0, 0, -bodyRadius - armLength] },
-          { start: [0, bodyHeight, 0], end: [0, gimbalY, gimbalZ] }
+          { start: [0, bodyHeight, 0], end: [0, gimbalY, gimbalZ] },
         ];
-        
+
         for (let wire of wireRoutes) {
           for (let t = 0; t <= 1; t += 0.05) {
             const x = wire.start[0] + (wire.end[0] - wire.start[0]) * t;
             const y = wire.start[1] + (wire.end[1] - wire.start[1]) * t;
             const z = wire.start[2] + (wire.end[2] - wire.start[2]) * t;
-            
+
             // Main wire
             points.push(new THREE.Vector3(x * scale, y * scale, z * scale));
-            
+
             // Wire bundle thickness
             for (let bundle = 0; bundle < 3; bundle++) {
               const offset = 0.1;
-              points.push(new THREE.Vector3(
-                x * scale + (Math.random() - 0.5) * offset,
-                y * scale + (Math.random() - 0.5) * offset,
-                z * scale + (Math.random() - 0.5) * offset
-              ));
+              points.push(
+                new THREE.Vector3(
+                  x * scale + (Math.random() - 0.5) * offset,
+                  y * scale + (Math.random() - 0.5) * offset,
+                  z * scale + (Math.random() - 0.5) * offset
+                )
+              );
             }
           }
         }
@@ -1622,7 +1567,7 @@
           const guardX = Math.cos(guardAngle) * guardDistance;
           const guardZ = Math.sin(guardAngle) * guardDistance;
           const guardRadius = propellerRadius + 1;
-          
+
           // Ring guard around propeller
           for (let angle = 0; angle < Math.PI * 2; angle += 0.05) {
             for (let thickness = -0.3; thickness <= 0.3; thickness += 0.1) {
@@ -1639,149 +1584,30 @@
         const fcY = 0;
         const fcZ = 0;
         const fcSize = 2;
-        
+
         // Flight controller board
         for (let x = -fcSize; x <= fcSize; x += 0.2) {
           for (let z = -fcSize; z <= fcSize; z += 0.2) {
             // PCB surface
-            points.push(new THREE.Vector3(
-              (fcX + x) * scale,
-              (fcY + 0.2) * scale,
-              (fcZ + z) * scale
-            ));
-            
+            points.push(
+              new THREE.Vector3(
+                (fcX + x) * scale,
+                (fcY + 0.2) * scale,
+                (fcZ + z) * scale
+              )
+            );
+
             // Components on board
             if (x % 0.8 < 0.2 && z % 0.8 < 0.2) {
               for (let comp = 0; comp < 3; comp++) {
-                points.push(new THREE.Vector3(
-                  (fcX + x) * scale,
-                  (fcY + 0.2 + comp * 0.1) * scale,
-                  (fcZ + z) * scale
-                ));
+                points.push(
+                  new THREE.Vector3(
+                    (fcX + x) * scale,
+                    (fcY + 0.2 + comp * 0.1) * scale,
+                    (fcZ + z) * scale
+                  )
+                );
               }
-            }
-          }
-        }
-
-        distributePointsToParticles(points);
-      }
-
-      function generateTree() {
-        const points = [];
-        const scale = 0.7;
-
-        // Trunk
-        const trunkHeight = 15;
-        const trunkRadius = 3;
-        for (let y = -15; y < -15 + trunkHeight; y += 0.5) {
-          const radiusAtHeight =
-            trunkRadius * (1 + ((y + 15) / trunkHeight) * 0.2);
-          for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
-            const x = Math.cos(angle) * radiusAtHeight * scale;
-            const z = Math.sin(angle) * radiusAtHeight * scale;
-            points.push(new THREE.Vector3(x, y * scale, z));
-          }
-        }
-
-        // Branches with recursive structure
-        function addBranch(origin, direction, length, radius, level) {
-          if (level > 3 || length < 1) return;
-
-          const segments = 10;
-          for (let i = 0; i <= segments; i++) {
-            const t = i / segments;
-            const pos = origin
-              .clone()
-              .add(direction.clone().multiplyScalar(length * t));
-
-            // Add thickness
-            for (let j = 0; j < 5; j++) {
-              const offset = new THREE.Vector3(
-                (Math.random() - 0.5) * radius,
-                (Math.random() - 0.5) * radius,
-                (Math.random() - 0.5) * radius
-              );
-              points.push(pos.clone().add(offset));
-            }
-
-            // Create sub-branches
-            if (i === segments) {
-              const branches = 2 + Math.floor(Math.random() * 2);
-              for (let b = 0; b < branches; b++) {
-                const newDir = direction.clone();
-                newDir.x += (Math.random() - 0.5) * 0.8;
-                newDir.y += Math.random() * 0.5;
-                newDir.z += (Math.random() - 0.5) * 0.8;
-                newDir.normalize();
-
-                addBranch(pos, newDir, length * 0.7, radius * 0.6, level + 1);
-              }
-            }
-          }
-        }
-
-        // Main branches from trunk
-        const numMainBranches = 6;
-        for (let i = 0; i < numMainBranches; i++) {
-          const angle = (i / numMainBranches) * Math.PI * 2;
-          const height = -15 + trunkHeight * (0.5 + Math.random() * 0.3);
-          const origin = new THREE.Vector3(
-            Math.cos(angle) * trunkRadius * scale,
-            height * scale,
-            Math.sin(angle) * trunkRadius * scale
-          );
-          const direction = new THREE.Vector3(
-            Math.cos(angle) * 0.7,
-            0.6 + Math.random() * 0.3,
-            Math.sin(angle) * 0.7
-          ).normalize();
-
-          addBranch(origin, direction, 12 * scale, 2 * scale, 0);
-        }
-
-        // Foliage clusters
-        for (let cluster = 0; cluster < 30; cluster++) {
-          const theta = Math.random() * Math.PI;
-          const phi = Math.random() * Math.PI * 2;
-          const r = 15 + Math.random() * 10;
-          const cx = r * Math.sin(theta) * Math.cos(phi) * scale;
-          const cy = r * (0.5 + Math.random() * 0.5) * scale;
-          const cz = r * Math.sin(theta) * Math.sin(phi) * scale;
-
-          // Create leaf cluster
-          for (let leaf = 0; leaf < 50; leaf++) {
-            const leafR = Math.random() * 3;
-            const leafTheta = Math.random() * Math.PI;
-            const leafPhi = Math.random() * Math.PI * 2;
-
-            const x =
-              cx + leafR * Math.sin(leafTheta) * Math.cos(leafPhi) * scale;
-            const y = cy + leafR * Math.cos(leafTheta) * scale;
-            const z =
-              cz + leafR * Math.sin(leafTheta) * Math.sin(leafPhi) * scale;
-
-            points.push(new THREE.Vector3(x, y, z));
-          }
-        }
-
-        // Roots
-        const numRoots = 8;
-        for (let i = 0; i < numRoots; i++) {
-          const angle = (i / numRoots) * Math.PI * 2 + Math.random() * 0.5;
-          for (let t = 0; t < 1; t += 0.05) {
-            const spread = t * 10;
-            const x = Math.cos(angle) * spread * scale;
-            const y = -15 - t * 5 * scale;
-            const z = Math.sin(angle) * spread * scale;
-
-            for (let j = 0; j < 5; j++) {
-              points.push(
-                new THREE.Vector3(
-                  x + (Math.random() - 0.5) * 2,
-                  y + Math.random(),
-                  z + (Math.random() - 0.5) * 2
-                )
-              );
             }
           }
         }
