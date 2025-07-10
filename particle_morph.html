@@ -210,11 +210,15 @@
         color: #ff5900;
         z-index: 2000;
       }
+
+      .hidden {
+        display: none;
+      }
     </style>
   </head>
   <body>
     <div id="container"></div>
-    <div id="ui">
+    <div id="ui hidden">
       <div id="title">PARTICLE MORPH</div>
       <div class="button" data-shape="angkorwat">ANGKOR WAT</div>
       <div class="button" data-shape="naga">NAGA</div>
@@ -222,7 +226,7 @@
       <div class="button" data-shape="drone">DRONE</div>
     </div>
 
-    <div id="controls">
+    <div id="controls hidden">
       <div class="control-group">
         <div class="slider-container">
           <label>Particle Size: <span id="sizeValue">3.0</span></label>
@@ -253,14 +257,14 @@
       </div>
       <div class="control-group">
         <div class="slider-container">
-          <label>Bloom Intensity: <span id="bloomValue">1.5</span></label>
+          <label>Bloom Intensity: <span id="bloomValue">1.1</span></label>
           <input
             type="range"
             id="bloomStrength"
             min="0"
             max="3"
             step="0.1"
-            value="1.5"
+            value="1.1"
           />
         </div>
         <div class="slider-container">
@@ -308,7 +312,7 @@
       let previousRenderTarget, motionBlurComposer;
 
       // Particle system parameters
-      const PARTICLE_COUNT = 20000;
+      const PARTICLE_COUNT = 30000;
       let targetPositions = new Float32Array(PARTICLE_COUNT * 3);
       let originalPositions = new Float32Array(PARTICLE_COUNT * 3);
       let morphProgress = 1.0;
@@ -319,7 +323,7 @@
         particleSize: 3.0,
         particleColor: new THREE.Color("#ff5900"),
         rotationSpeed: 0.5,
-        bloomStrength: 1.5,
+        bloomStrength: 1.1,
         motionTrail: 0.85,
       };
 
