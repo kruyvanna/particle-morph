@@ -1104,6 +1104,159 @@
           }
         }
 
+        // Data transmission beams - directed towards Earth (downward)
+        const beamOrigins = [
+          { x: 0, y: -bodyHeight/2 - 2, z: 0, type: 'main' },
+          { x: 3, y: -bodyHeight/2 - 1, z: 2, type: 'secondary' },
+          { x: -3, y: -bodyHeight/2 - 1, z: 2, type: 'secondary' },
+          { x: 0, y: -bodyHeight/2 - 1, z: -bodyDepth - 1, type: 'scanning' }
+        ];
+
+        for (let beam of beamOrigins) {
+          const beamLength = beam.type === 'main' ? 40 : 25;
+          const beamWidth = beam.type === 'main' ? 12 : 8;
+          const beamDensity = beam.type === 'main' ? 0.05 : 0.08;
+
+          // Create expanding cone-shaped beam
+          for (let t = 0; t <= 1; t += beamDensity) {
+            const beamY = beam.y - t * beamLength;
+            const currentRadius = t * beamWidth;
+            
+            // Beam particles distributed in expanding circle
+            const particlesInRing = Math.floor(currentRadius * 8) + 5;
+            for (let p = 0; p < particlesInRing; p++) {
+              const angle = (p / particlesInRing) * Math.PI * 2;
+              const r = Math.random() * currentRadius;
+              
+              // Add some randomness for realistic beam scatter
+              const scatter = 0.5;
+              const beamX = beam.x + Math.cos(angle) * r + (Math.random() - 0.5) * scatter;
+              const beamZ = beam.z + Math.sin(angle) * r + (Math.random() - 0.5) * scatter;
+              const beamYScatter = beamY + (Math.random() - 0.5) * scatter;
+              
+              points.push(new THREE.Vector3(beamX * scale, beamYScatter * scale, beamZ * scale));
+            }
+            
+            // Dense center beam for main transmission
+            if (beam.type === 'main') {
+              const centerDensity = 15;
+              for (let c = 0; c < centerDensity; c++) {
+                const centerRadius = Math.random() * (currentRadius * 0.3);
+                const centerAngle = Math.random() * Math.PI * 2;
+                const centerX = beam.x + Math.cos(centerAngle) * centerRadius;
+                const centerZ = beam.z + Math.sin(centerAngle) * centerRadius;
+                points.push(new THREE.Vector3(centerX * scale, beamY * scale, centerZ * scale));
+              }
+            }
+          }
+          
+          // Scanning beam pattern (for radar/scanning beams)
+          if (beam.type === 'scanning') {
+            for (let sweep = 0; sweep < 3; sweep++) {
+              const sweepAngle = (sweep / 3) * Math.PI * 2;
+              
+              for (let t = 0; t <= 1; t += 0.03) {
+                const scanLength = 30;
+                const scanY = beam.y - t * scanLength;
+                const scanWidth = t * 15;
+                
+                // Sweeping pattern
+                for (let w = -scanWidth; w <= scanWidth; w += 0.5) {
+                  const scanX = beam.x + Math.cos(sweepAngle) * w;
+                  const scanZ = beam.z + Math.sin(sweepAngle) * w;
+                  points.push(new THREE.Vector3(scanX * scale, scanY * scale, scanZ * scale));
+                }
+              }
+            }
+          }
+        }
+
+        // Data stream particles - flowing downward in organized streams
+        const streamCount = 8;
+        for (let stream = 0; stream < streamCount; stream++) {
+          const streamAngle = (stream / streamCount) * Math.PI * 2;
+          const streamRadius = 6;
+          const streamX = Math.cos(streamAngle) * streamRadius;
+          const streamZ = Math.sin(streamAngle) * streamRadius;
+          
+          // Create flowing data stream
+          for (let flow = 0; flow < 50; flow += 2) {
+            const flowY = -bodyHeight/2 - flow;
+            const flowWave = Math.sin(flow * 0.2) * 1.5; // Slight wave motion
+            
+            // Main stream particles
+            points.push(new THREE.Vector3(
+              (streamX + flowWave) * scale,
+              flowY * scale,
+              (streamZ + flowWave * 0.5) * scale
+            ));
+            
+            // Stream variations
+            for (let variation = 0; variation < 3; variation++) {
+              const varX = streamX + (Math.random() - 0.5) * 2;
+              const varZ = streamZ + (Math.random() - 0.5) * 2;
+              points.push(new THREE.Vector3(
+                varX * scale,
+                (flowY + variation * 0.3) * scale,
+                varZ * scale
+              ));
+            }
+          }
+        }
+
+        // Intense focused beam (laser communication)
+        const laserBeam = {
+          x: dishX,
+          y: dishY - 1,
+          z: dishZ,
+          length: 35,
+          width: 0.5
+        };
+
+        for (let t = 0; t <= 1; t += 0.02) {
+          const laserY = laserBeam.y - t * laserBeam.length;
+          const laserRadius = laserBeam.width + t * 2; // Slight expansion
+          
+          // Dense laser beam core
+          for (let core = 0; core < 20; core++) {
+            const coreAngle = Math.random() * Math.PI * 2;
+            const coreR = Math.random() * laserRadius;
+            const laserX = laserBeam.x + Math.cos(coreAngle) * coreR;
+            const laserZ = laserBeam.z + Math.sin(coreAngle) * coreR;
+            points.push(new THREE.Vector3(laserX * scale, laserY * scale, laserZ * scale));
+          }
+        }
+
+        // Signal interference patterns (electromagnetic visualization)
+        const interferenceRadius = 20;
+        for (let ring = 1; ring <= 5; ring++) {
+          const ringRadius = interferenceRadius * (ring / 5);
+          const ringY = -bodyHeight/2 - ring * 3;
+          
+          for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
+            // Interference ring particles
+            const ringX = Math.cos(angle) * ringRadius;
+            const ringZ = Math.sin(angle) * ringRadius;
+            
+            // Add wave-like distortion
+            const wave = Math.sin(angle * 6 + ring) * 0.8;
+            points.push(new THREE.Vector3(
+              ringX * scale,
+              (ringY + wave) * scale,
+              ringZ * scale
+            ));
+            
+            // Secondary interference
+            if (ring % 2 === 0) {
+              points.push(new THREE.Vector3(
+                (ringX * 0.7) * scale,
+                (ringY + wave * 0.5) * scale,
+                (ringZ * 0.7) * scale
+              ));
+            }
+          }
+        }
+
         distributePointsToParticles(points);
       }
 
