@@ -218,6 +218,7 @@
       <div id="title">PARTICLE MORPH</div>
       <div class="button" data-shape="sphere">SPHERE</div>
       <div class="button" data-shape="angkorwat">ANGKOR WAT</div>
+      <div class="button" data-shape="naga">NAGA</div>
       <div class="button" data-shape="satellite">SATELLITE</div>
       <div class="button" data-shape="modern-satellite">MODERN SAT</div>
       <div class="button" data-shape="drone">DRONE</div>
@@ -587,6 +588,9 @@
             break;
           case "angkorwat":
             generateAngkorWat();
+            break;
+          case "naga":
+            generateNaga();
             break;
           case "satellite":
             generateSatellite();
@@ -2854,6 +2858,304 @@
                   }
                 }
               }
+            }
+          }
+        }
+
+        distributePointsToParticles(points);
+      }
+
+      function generateNaga() {
+        const points = [];
+        const scale = 1.2;
+
+        // Cambodian 7-headed Naga (serpent dragon)
+        // Main serpent body (sinuous, curved)
+        const bodyLength = 50;
+        const bodySegments = 200;
+        const bodyRadius = 2.5;
+
+        // Create sinuous body curve
+        for (let i = 0; i < bodySegments; i++) {
+          const t = i / bodySegments;
+          const x = (t - 0.5) * bodyLength;
+          
+          // Create S-curve with multiple waves
+          const wave1 = Math.sin(t * Math.PI * 3) * 8;
+          const wave2 = Math.sin(t * Math.PI * 5 + Math.PI/3) * 4;
+          const z = wave1 + wave2;
+          
+          // Body rises toward the heads
+          const y = Math.sin(t * Math.PI * 0.5) * 3 + t * 8;
+          
+          // Body radius varies along length
+          const currentRadius = bodyRadius * (0.8 + 0.4 * Math.sin(t * Math.PI));
+          
+          // Create cylindrical body segments
+          const rings = 12;
+          for (let ring = 0; ring < rings; ring++) {
+            const angle = (ring / rings) * Math.PI * 2;
+            const bodyX = x + Math.cos(angle) * currentRadius;
+            const bodyY = y + Math.sin(angle) * currentRadius * 0.6; // Slightly flattened
+            const bodyZ = z;
+            
+            points.push(new THREE.Vector3(bodyX * scale, bodyY * scale, bodyZ * scale));
+            
+            // Add scales texture
+            if (i % 3 === 0 && ring % 2 === 0) {
+              const scaleSize = 0.3;
+              for (let s = 0; s < 3; s++) {
+                points.push(new THREE.Vector3(
+                  (bodyX + (Math.random() - 0.5) * scaleSize) * scale,
+                  (bodyY + (Math.random() - 0.5) * scaleSize) * scale,
+                  (bodyZ + (Math.random() - 0.5) * scaleSize) * scale
+                ));
+              }
+            }
+          }
+          
+          // Spinal ridge
+          if (i % 2 === 0) {
+            const ridgeHeight = 0.8;
+            points.push(new THREE.Vector3(x * scale, (y + currentRadius + ridgeHeight) * scale, z * scale));
+          }
+        }
+
+        // Seven heads arranged in a fan formation
+        const headCount = 7;
+        const headSpacing = 6;
+        const headBaseY = bodyLength * 0.08 + 8; // At the raised end of the body
+        const headBaseX = bodyLength * 0.4;
+        const headBaseZ = 0;
+
+        for (let h = 0; h < headCount; h++) {
+          const headIndex = h - Math.floor(headCount / 2); // Center the heads
+          const headAngle = (headIndex / headCount) * Math.PI * 0.8; // Fan spread
+          const headDistance = Math.abs(headIndex) * headSpacing + 8;
+          
+          const headX = headBaseX + Math.cos(headAngle) * headDistance;
+          const headZ = headBaseZ + Math.sin(headAngle) * headDistance;
+          const headY = headBaseY + Math.abs(headIndex) * 2; // Middle head highest
+          
+          // Neck connecting to body
+          const neckLength = 8;
+          const neckSegments = 20;
+          
+          for (let n = 0; n < neckSegments; n++) {
+            const neckT = n / neckSegments;
+            const neckRadius = 1.5 * (1 - neckT * 0.3);
+            
+            // Neck curve
+            const neckX = headBaseX + (headX - headBaseX) * neckT;
+            const neckY = headBaseY + (headY - headBaseY) * neckT + Math.sin(neckT * Math.PI) * 2;
+            const neckZ = headBaseZ + (headZ - headBaseZ) * neckT;
+            
+            // Neck segments
+            const neckRings = 8;
+            for (let ring = 0; ring < neckRings; ring++) {
+              const angle = (ring / neckRings) * Math.PI * 2;
+              const nx = neckX + Math.cos(angle) * neckRadius;
+              const ny = neckY + Math.sin(angle) * neckRadius * 0.7;
+              const nz = neckZ;
+              
+              points.push(new THREE.Vector3(nx * scale, ny * scale, nz * scale));
+            }
+          }
+          
+          // Dragon head structure
+          const headLength = 4;
+          const headWidth = 2.5;
+          const headHeight = 2;
+          
+          // Head main structure
+          for (let x = -headLength/2; x <= headLength/2; x += 0.2) {
+            for (let y = -headHeight/2; y <= headHeight/2; y += 0.2) {
+              for (let z = -headWidth/2; z <= headWidth/2; z += 0.2) {
+                // Head shape (elongated, tapered)
+                const headFactor = 1 - Math.abs(x) / (headLength/2);
+                const currentWidth = headWidth * headFactor;
+                const currentHeight = headHeight * headFactor;
+                
+                if (Math.abs(y) <= currentHeight/2 && Math.abs(z) <= currentWidth/2) {
+                  const headPointX = headX + x * Math.cos(headAngle) - z * Math.sin(headAngle);
+                  const headPointY = headY + y;
+                  const headPointZ = headZ + x * Math.sin(headAngle) + z * Math.cos(headAngle);
+                  
+                  points.push(new THREE.Vector3(headPointX * scale, headPointY * scale, headPointZ * scale));
+                }
+              }
+            }
+          }
+          
+          // Eyes (prominent and fierce)
+          const eyePositions = [
+            { x: headLength/3, y: headHeight/4, z: headWidth/3 },
+            { x: headLength/3, y: headHeight/4, z: -headWidth/3 }
+          ];
+          
+          for (let eye of eyePositions) {
+            const eyeRadius = 0.4;
+            const eyeSegments = 12;
+            
+            for (let e = 0; e < eyeSegments; e++) {
+              const eyeAngle = (e / eyeSegments) * Math.PI * 2;
+              const eyeX = headX + (eye.x * Math.cos(headAngle) - eye.z * Math.sin(headAngle)) + Math.cos(eyeAngle) * eyeRadius;
+              const eyeY = headY + eye.y + Math.sin(eyeAngle) * eyeRadius;
+              const eyeZ = headZ + (eye.x * Math.sin(headAngle) + eye.z * Math.cos(headAngle));
+              
+              points.push(new THREE.Vector3(eyeX * scale, eyeY * scale, eyeZ * scale));
+              
+              // Eye detail
+              if (e % 3 === 0) {
+                points.push(new THREE.Vector3(
+                  (eyeX + Math.cos(eyeAngle) * 0.2) * scale,
+                  (eyeY + Math.sin(eyeAngle) * 0.2) * scale,
+                  eyeZ * scale
+                ));
+              }
+            }
+          }
+          
+          // Nostrils
+          const nostrilPositions = [
+            { x: headLength/2 - 0.3, y: 0, z: 0.3 },
+            { x: headLength/2 - 0.3, y: 0, z: -0.3 }
+          ];
+          
+          for (let nostril of nostrilPositions) {
+            const nostrilX = headX + (nostril.x * Math.cos(headAngle) - nostril.z * Math.sin(headAngle));
+            const nostrilY = headY + nostril.y;
+            const nostrilZ = headZ + (nostril.x * Math.sin(headAngle) + nostril.z * Math.cos(headAngle));
+            
+            // Small nostril opening
+            for (let n = 0; n < 8; n++) {
+              const nAngle = (n / 8) * Math.PI * 2;
+              const nRadius = 0.15;
+              points.push(new THREE.Vector3(
+                (nostrilX + Math.cos(nAngle) * nRadius) * scale,
+                (nostrilY + Math.sin(nAngle) * nRadius) * scale,
+                nostrilZ * scale
+              ));
+            }
+          }
+          
+          // Mouth and fangs
+          const mouthLength = headLength * 0.6;
+          const mouthWidth = headWidth * 0.8;
+          
+          // Mouth opening
+          for (let m = 0; m < mouthLength; m += 0.2) {
+            const mouthT = m / mouthLength;
+            const currentMouthWidth = mouthWidth * (1 - mouthT * 0.3);
+            
+            for (let side = -1; side <= 1; side += 2) {
+              const mouthX = headX + ((m - mouthLength/2) * Math.cos(headAngle));
+              const mouthY = headY - 0.3;
+              const mouthZ = headZ + ((m - mouthLength/2) * Math.sin(headAngle)) + side * currentMouthWidth/2;
+              
+              points.push(new THREE.Vector3(mouthX * scale, mouthY * scale, mouthZ * scale));
+            }
+          }
+          
+          // Fangs
+          const fangPositions = [
+            { x: headLength/4, z: headWidth/4 },
+            { x: headLength/4, z: -headWidth/4 },
+            { x: headLength/3, z: headWidth/6 },
+            { x: headLength/3, z: -headWidth/6 }
+          ];
+          
+          for (let fang of fangPositions) {
+            const fangLength = 1.2;
+            const fangSegments = 8;
+            
+            for (let f = 0; f < fangSegments; f++) {
+              const fangT = f / fangSegments;
+              const fangRadius = 0.1 * (1 - fangT);
+              
+              const fangX = headX + (fang.x * Math.cos(headAngle) - fang.z * Math.sin(headAngle));
+              const fangY = headY - fangT * fangLength;
+              const fangZ = headZ + (fang.x * Math.sin(headAngle) + fang.z * Math.cos(headAngle));
+              
+              // Fang tip detail
+              for (let ring = 0; ring < 4; ring++) {
+                const ringAngle = (ring / 4) * Math.PI * 2;
+                points.push(new THREE.Vector3(
+                  (fangX + Math.cos(ringAngle) * fangRadius) * scale,
+                  fangY * scale,
+                  (fangZ + Math.sin(ringAngle) * fangRadius) * scale
+                ));
+              }
+            }
+          }
+          
+          // Head crest/crown (traditional Khmer style)
+          if (h === Math.floor(headCount / 2)) { // Central head gets the crown
+            const crownHeight = 3;
+            const crownWidth = headWidth * 1.5;
+            const crownSegments = 20;
+            
+            for (let c = 0; c < crownSegments; c++) {
+              const crownAngle = (c / crownSegments) * Math.PI * 2;
+              const crownRadius = crownWidth/2 * (1 + 0.3 * Math.sin(crownAngle * 3)); // Ornate edge
+              
+              for (let h = 0; h < crownHeight; h += 0.2) {
+                const currentRadius = crownRadius * (1 - h/crownHeight * 0.4);
+                const crownX = headX + Math.cos(crownAngle + headAngle) * currentRadius;
+                const crownY = headY + headHeight/2 + h;
+                const crownZ = headZ + Math.sin(crownAngle + headAngle) * currentRadius;
+                
+                points.push(new THREE.Vector3(crownX * scale, crownY * scale, crownZ * scale));
+              }
+            }
+            
+            // Crown decorative spikes
+            const spikes = 7;
+            for (let s = 0; s < spikes; s++) {
+              const spikeAngle = (s / spikes) * Math.PI * 2;
+              const spikeHeight = 2;
+              const spikeSegments = 10;
+              
+              for (let seg = 0; seg < spikeSegments; seg++) {
+                const spikeT = seg / spikeSegments;
+                const spikeRadius = 0.1 * (1 - spikeT);
+                
+                const spikeX = headX + Math.cos(spikeAngle + headAngle) * crownWidth/2;
+                const spikeY = headY + headHeight/2 + crownHeight + spikeT * spikeHeight;
+                const spikeZ = headZ + Math.sin(spikeAngle + headAngle) * crownWidth/2;
+                
+                for (let ring = 0; ring < 4; ring++) {
+                  const ringAngle = (ring / 4) * Math.PI * 2;
+                  points.push(new THREE.Vector3(
+                    (spikeX + Math.cos(ringAngle) * spikeRadius) * scale,
+                    spikeY * scale,
+                    (spikeZ + Math.sin(ringAngle) * spikeRadius) * scale
+                  ));
+                }
+              }
+            }
+          }
+        }
+
+        // Decorative fins along the body
+        const finCount = 15;
+        for (let f = 0; f < finCount; f++) {
+          const finT = (f / finCount) * 0.8 + 0.1; // Along most of the body
+          const finX = (finT - 0.5) * bodyLength;
+          const finZ = Math.sin(finT * Math.PI * 3) * 8 + Math.sin(finT * Math.PI * 5 + Math.PI/3) * 4;
+          const finY = Math.sin(finT * Math.PI * 0.5) * 3 + finT * 8;
+          
+          const finHeight = 2 + Math.sin(finT * Math.PI * 2) * 1;
+          const finWidth = 1.5;
+          
+          // Dorsal fin
+          for (let h = 0; h < finHeight; h += 0.2) {
+            for (let w = -finWidth/2; w <= finWidth/2; w += 0.2) {
+              const finPointX = finX + w;
+              const finPointY = finY + bodyRadius + h;
+              const finPointZ = finZ;
+              
+              points.push(new THREE.Vector3(finPointX * scale, finPointY * scale, finPointZ * scale));
             }
           }
         }
