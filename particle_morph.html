@@ -345,6 +345,28 @@
         initialButton.classList.add("active");
         selectedButton = initialButton;
         morphToShape("modern-satellite");
+
+        // Auto-morphing timer - cycle through shapes every 10 seconds
+        const shapes = ["modern-satellite", "angkorwat", "drone"];
+        let currentShapeIndex = 0;
+
+        setInterval(() => {
+          currentShapeIndex = (currentShapeIndex + 1) % shapes.length;
+          const nextShape = shapes[currentShapeIndex];
+
+          // Update button states
+          document
+            .querySelectorAll(".button")
+            .forEach((btn) => btn.classList.remove("active"));
+          const nextButton = document.querySelector(
+            `[data-shape="${nextShape}"]`
+          );
+          nextButton.classList.add("active");
+          selectedButton = nextButton;
+
+          // Morph to next shape
+          morphToShape(nextShape);
+        }, 10000);
       }
 
       function initScene() {
@@ -2926,7 +2948,7 @@
       function updateMorphing(deltaTime) {
         if (!isMorphing) return;
 
-        morphProgress += deltaTime * 0.5; // Morph speed - slower transition
+        morphProgress += deltaTime * 0.4; // Morph speed - slower transition
         if (morphProgress >= 1.0) {
           morphProgress = 1.0;
           isMorphing = false;
